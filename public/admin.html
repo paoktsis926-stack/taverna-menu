@@ -6,14 +6,14 @@
 <meta name="robots" content="noindex">
 <title>Διαχείριση μενού</title>
 <style>
-:root{--sea:#134558;--sea2:#1d5a70;--gold:#d9a53b;--bg:#faf8f3;--ink:#1c2a33;--mute:#6b7780;--line:#e3dfd5;--red:#b0402e;--ok:#2f7d57}
+:root{--sea:#103c46;--sea2:#1b5960;--gold:#d7ad63;--bg:#f4f3ed;--ink:#19353a;--mute:#697a79;--line:#e1e3db;--red:#a64232;--ok:#2f7d57}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 [hidden]{display:none!important}
 h1,h2,h3,.brand b{font-family:Georgia,"Times New Roman",serif}
 button,input,textarea,select{font:inherit}
-button{cursor:pointer;border:1px solid var(--sea);background:#fff;color:var(--sea);border-radius:10px;padding:8px 13px}
-button.pri{background:var(--sea);color:#fff}button.gold{background:var(--gold);border-color:var(--gold);color:#2a1d00;font-weight:600}
+button{cursor:pointer;border:1px solid #d5ddd8;background:#fffefa;color:var(--sea);border-radius:11px;padding:9px 13px;transition:background .15s,border-color .15s}button:hover{border-color:var(--sea2);background:#f4f8f5}
+button.pri{background:var(--sea);color:#fff;border-color:var(--sea)}button.gold{background:var(--gold);border-color:var(--gold);color:#2a1d00;font-weight:600}
 button.dng{border-color:var(--red);color:var(--red)}button.ic{padding:6px 10px;min-width:38px}
 :focus-visible{outline:3px solid var(--gold);outline-offset:1px}
 input,textarea,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
@@ -22,7 +22,7 @@ label{display:block;margin:12px 0 4px;font-weight:600;font-size:14px}
 #login h1{color:var(--sea)}
 .err{color:var(--red);min-height:1.4em}.ok{color:var(--ok)}
 .shell{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
-aside{background:var(--sea);color:#fff;padding:18px 12px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:14px}
+aside{background:linear-gradient(165deg,#0c3038,var(--sea));color:#fff;padding:20px 13px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:16px;border-right:3px solid var(--gold)}
 .brand{display:flex;gap:10px;align-items:center;padding:0 6px}
 .brand i{width:42px;height:42px;border-radius:12px;background:var(--gold);color:#2a1d00;display:grid;place-items:center;font:700 22px Georgia,serif;font-style:normal}
 .brand b{font-size:20px;display:block;line-height:1.1}.brand small{opacity:.7;font-size:11px;letter-spacing:.08em}
@@ -31,10 +31,10 @@ aside{background:var(--sea);color:#fff;padding:18px 12px;position:sticky;top:0;h
 #nv button.on{background:#ffffff22;color:#fff;font-weight:600}
 .sf{display:flex;flex-direction:column;gap:6px}
 .sf a,.sf button{color:#fff;border:1px solid #ffffff44;background:transparent;border-radius:10px;padding:9px 12px;text-decoration:none;text-align:center}
-main{padding:28px;max-width:980px;width:100%}
+main{padding:30px;max-width:1180px;width:100%}
 main h1{font-size:34px;margin:0 0 4px;color:var(--sea)}.sub{color:var(--mute);margin:0 0 20px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
-.stat,.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px}
+.stat,.card{background:#fffefa;border:1px solid var(--line);border-radius:16px;padding:17px;box-shadow:0 4px 18px #19353a05}
 .stat b{font:700 30px Georgia,serif;color:var(--sea);display:block}.stat span{color:var(--mute);font-size:14px}
 .links{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:6px}
 .links button{padding:18px;text-align:left;border-radius:14px;font-weight:600}
@@ -151,6 +151,8 @@ dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::ba
   <label>Όνομα (English)</label><input id="d-nameen" maxlength="150">
   <label>Περιγραφή (Ελληνικά)</label><textarea id="d-desc" rows="2" maxlength="400"></textarea>
   <label>Περιγραφή (English)</label><textarea id="d-descen" rows="2" maxlength="400"></textarea>
+  <label>URL φωτογραφίας (προαιρετικό)</label><input id="d-image" type="url" inputmode="url" placeholder="https://…">
+  <div class="two"><div><label>Αλλεργιογόνα (Ελληνικά)</label><input id="d-allergens" maxlength="300" placeholder="π.χ. ψάρι, μαλάκια"></div><div><label>Αλλεργιογόνα (English)</label><input id="d-allergensen" maxlength="300" placeholder="e.g. fish, molluscs"></div></div>
   <div class="two"><div><label>Τιμή</label><input id="d-price" inputmode="decimal" placeholder="0,00"></div>
   <div><label>Κατηγορία</label><select id="d-cat"></select></div></div>
   <label style="display:flex;gap:8px;align-items:center"><input id="d-av" type="checkbox" style="width:auto"> Διαθέσιμο</label>
@@ -192,7 +194,7 @@ function prod(){
       <button class="ic" data-a="cup" title="Πάνω">↑</button><button class="ic" data-a="cdn" title="Κάτω">↓</button>
       <button data-a="cvis">${c.visible?'Απόκρυψη':'Εμφάνιση'}</button><button data-a="cren">Μετονομασία</button>
       <button class="dng" data-a="cdel">Διαγραφή</button><button class="pri" data-a="iadd">Νέο πιάτο</button></div>`+
-      its.map(i=>`<div class="it ${i.available?'':'off'}" data-i="${i.id}"><div class="t">${esc(i.name)}<small>${esc(i.name_en)}${i.description?' · '+esc(i.description):''}</small></div>
+      its.map(i=>`<div class="it ${i.available?'':'off'}" data-i="${i.id}"><div class="t">${i.image_url?'<img src="'+esc(i.image_url)+'" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:7px;vertical-align:middle;margin-right:8px">':''}${esc(i.name)}<small>${esc(i.name_en)}${i.description?' · '+esc(i.description):''}${i.allergens?' · Αλλεργιογόνα: '+esc(i.allergens):''}</small></div>
         <span class="pr">${money(i.price)} ${esc(D.settings.currency)}</span>
         <button class="ic" data-a="iup">↑</button><button class="ic" data-a="idn">↓</button>
         <button data-a="iav">${i.available?'Εξαντλήθηκε':'Διαθέσιμο'}</button><button data-a="ied">Επεξεργασία</button><button class="dng" data-a="idel">Διαγραφή</button></div>`).join('')+'</div>'}).join('');
@@ -229,12 +231,12 @@ function openDlg(it,cid){
   editId=it?it.id:null;$('#dt').textContent=it?'Επεξεργασία πιάτου':'Νέο πιάτο';$('#de').textContent='';
   $('#d-cat').innerHTML=D.categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
   $('#d-name').value=it?it.name:'';$('#d-nameen').value=it?it.name_en:'';$('#d-desc').value=it?it.description:'';$('#d-descen').value=it?it.description_en:'';
-  $('#d-price').value=it?money(it.price):'';$('#d-cat').value=cid;$('#d-av').checked=it?!!it.available:true;
+  $('#d-price').value=it?money(it.price):'';$('#d-cat').value=cid;$('#d-av').checked=it?!!it.available:true;$('#d-image').value=it?it.image_url||'':'';$('#d-allergens').value=it?it.allergens||'':'';$('#d-allergensen').value=it?it.allergens_en||'':'';
   $('#dlg').showModal();$('#d-name').focus()}
 $('#dc').onclick=()=>$('#dlg').close();
 $('#df').addEventListener('submit',async e=>{
   e.preventDefault();
-  const body={name:$('#d-name').value,name_en:$('#d-nameen').value,description:$('#d-desc').value,description_en:$('#d-descen').value,price:$('#d-price').value,category_id:+$('#d-cat').value,available:$('#d-av').checked?1:0};
+  const body={name:$('#d-name').value,name_en:$('#d-nameen').value,description:$('#d-desc').value,description_en:$('#d-descen').value,image_url:$('#d-image').value,allergens:$('#d-allergens').value,allergens_en:$('#d-allergensen').value,price:$('#d-price').value,category_id:+$('#d-cat').value,available:$('#d-av').checked?1:0};
   try{await api(editId?'/admin/items/'+editId:'/admin/items',editId?'PUT':'POST',body);$('#dlg').close();load()}
   catch(x){$('#de').textContent=x.message}});
 
