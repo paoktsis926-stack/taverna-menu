@@ -125,16 +125,16 @@ A.post('/items', (req, res) => {
   if (!name) return res.status(400).json({ error: 'Δώστε όνομα πιάτου' });
   if (!db.prepare('SELECT 1 FROM categories WHERE id=?').get(b.category_id)) return res.status(400).json({ error: 'Άκυρη κατηγορία' });
   const sort = db.prepare('SELECT COALESCE(MAX(sort),0)+1 n FROM items WHERE category_id=?').get(b.category_id).n;
-  res.json({ id: db.prepare('INSERT INTO items(category_id,name,name_en,description,description_en,price,available,sort) VALUES(?,?,?,?,?,?,?,?)')
-    .run(b.category_id, name, str(b.name_en, 150), str(b.description, 400), str(b.description_en, 400), num(b.price), bool(b.available ?? 1), sort).lastInsertRowid });
+  res.json({ id: db.prepare('INSERT INTO items(category_id,name,name_en,description,description_en,price,available,sort,image_url,allergens,allergens_en) VALUES(?,?,?,?,?,?,?,?,?,?,?)')
+    .run(b.category_id, name, str(b.name_en, 150), str(b.description, 400), str(b.description_en, 400), num(b.price), bool(b.available ?? 1), sort, str(b.image_url, 1000), str(b.allergens, 300), str(b.allergens_en, 300)).lastInsertRowid });
 });
 A.put('/items/:id', (req, res) => {
   const it = db.prepare('SELECT * FROM items WHERE id=?').get(req.params.id);
   if (!it) return res.status(404).json({ error: 'Δεν βρέθηκε' });
   const b = { ...it, ...req.body }, name = str(b.name, 150);
   if (!name) return res.status(400).json({ error: 'Δώστε όνομα πιάτου' });
-  db.prepare('UPDATE items SET category_id=?,name=?,name_en=?,description=?,description_en=?,price=?,available=? WHERE id=?')
-    .run(b.category_id, name, str(b.name_en, 150), str(b.description, 400), str(b.description_en, 400), num(b.price), bool(b.available), it.id);
+  db.prepare('UPDATE items SET category_id=?,name=?,name_en=?,description=?,description_en=?,price=?,available=?,image_url=?,allergens=?,allergens_en=? WHERE id=?')
+    .run(b.category_id, name, str(b.name_en, 150), str(b.description, 400), str(b.description_en, 400), num(b.price), bool(b.available), str(b.image_url, 1000), str(b.allergens, 300), str(b.allergens_en, 300), it.id);
   res.json({ ok: true });
 });
 A.delete('/items/:id', (req, res) => { db.prepare('DELETE FROM items WHERE id=?').run(req.params.id); res.json({ ok: true }); });
