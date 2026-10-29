@@ -178,7 +178,7 @@ app.use('/api/admin', A);
 const pub = path.join(__dirname, 'public');
 app.get('/admin', (req, res) => res.sendFile(path.join(pub, 'admin.html')));
 app.get('/print', (req, res) => res.sendFile(path.join(pub, 'print.html')));
-app.use(express.static(pub, { index: 'index.html', maxAge: '1h' }));
+app.use(express.static(pub, { index: 'index.html', maxAge: 0, setHeaders: (res, filePath) => { if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate'); } }));
 
 app.use((err, req, res, next) => { console.error(err); res.status(500).json({ error: 'Σφάλμα διακομιστή' }); });
 app.listen(PORT, '0.0.0.0', () => console.log('Menu server on :' + PORT));
