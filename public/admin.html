@@ -12,7 +12,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-app
 [hidden]{display:none!important}
 h1,h2,h3,.brand b{font-family:Georgia,"Times New Roman",serif}
 button,input,textarea,select{font:inherit}
-button{cursor:pointer;border:1px solid #d5ddd8;background:#fffefa;color:var(--sea);border-radius:11px;padding:9px 13px;transition:background .15s,border-color .15s}button:hover{border-color:var(--sea2);background:#f4f8f5}
+button{cursor:pointer;border:1px solid #d5ddd8;background:#fffefa;color:var(--sea);border-radius:11px;padding:9px 13px;transition:background .15s,border-color .15s}button:hover{border-color:var(--sea2);background:#f4f8f5;transform:translateY(-1px)}button:active{transform:translateY(0)}
 button.pri{background:var(--sea);color:#fff;border-color:var(--sea)}button.gold{background:var(--gold);border-color:var(--gold);color:#2a1d00;font-weight:600}
 button.dng{border-color:var(--red);color:var(--red)}button.ic{padding:6px 10px;min-width:38px}
 :focus-visible{outline:3px solid var(--gold);outline-offset:1px}
@@ -31,7 +31,7 @@ aside{background:linear-gradient(165deg,#0c3038,var(--sea));color:#fff;padding:2
 #nv button.on{background:#ffffff22;color:#fff;font-weight:600}
 .sf{display:flex;flex-direction:column;gap:6px}
 .sf a,.sf button{color:#fff;border:1px solid #ffffff44;background:transparent;border-radius:10px;padding:9px 12px;text-decoration:none;text-align:center}
-main{padding:30px;max-width:1180px;width:100%}
+main{padding:30px;max-width:1280px;width:100%}main>section:not([hidden]){animation:section-in .18s ease-out}@keyframes section-in{from{opacity:.65;transform:translateY(4px)}to{opacity:1;transform:none}}
 main h1{font-size:34px;margin:0 0 4px;color:var(--sea)}.sub{color:var(--mute);margin:0 0 20px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
 .stat,.card{background:#fffefa;border:1px solid var(--line);border-radius:16px;padding:17px;box-shadow:0 4px 18px #19353a05}
@@ -40,7 +40,7 @@ main h1{font-size:34px;margin:0 0 4px;color:var(--sea)}.sub{color:var(--mute);ma
 .links button{padding:18px;text-align:left;border-radius:14px;font-weight:600}
 .tools{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-bottom:12px}
 .bt{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
-.cat{background:#fff;border:1px solid var(--line);border-radius:14px;margin:14px 0;overflow:hidden}
+.cat{background:#fff;border:1px solid var(--line);border-radius:14px;margin:14px 0;overflow:hidden;box-shadow:0 5px 20px #19353a08;transition:border-color .15s,box-shadow .15s}.cat[draggable="true"],.it[draggable="true"]{cursor:grab}.cat.dragging,.it.dragging{opacity:.45;border:2px dashed var(--sea2)}.cat.drop-target,.it.drop-target{outline:2px solid var(--gold);outline-offset:2px}
 .cat>.h{display:flex;gap:6px;align-items:center;padding:10px 12px;background:#efece3;flex-wrap:wrap}
 .cat>.h b{flex:1;min-width:140px;font:700 18px Georgia,serif;color:var(--sea)}.cat>.h small{font-weight:400;color:var(--mute);font-family:system-ui}
 .cat.hid>.h b{opacity:.5}
@@ -189,11 +189,11 @@ function prod(){
   const html=D.categories.filter(c=>!fc||String(c.id)===fc).map(c=>{
     const its=c.items.filter(i=>(!q||(i.name+' '+i.name_en).toLowerCase().includes(q))&&(!fs||(fs==='on')===!!i.available));
     if((q||fs)&&!its.length)return '';
-    return `<div class="cat ${c.visible?'':'hid'}" data-c="${c.id}"><div class="h"><b>${esc(c.name)}${c.name_en?` <small>${esc(c.name_en)}</small>`:''}${c.visible?'':' (κρυφή)'}</b>
+    return `<div class="cat ${c.visible?'':'hid'}" data-c="${c.id}" draggable="true" title="Σύρε για αλλαγή σειράς"><div class="h"><b>${esc(c.name)}${c.name_en?` <small>${esc(c.name_en)}</small>`:''}${c.visible?'':' (κρυφή)'}</b>
       <button class="ic" data-a="cup" title="Πάνω">↑</button><button class="ic" data-a="cdn" title="Κάτω">↓</button>
       <button data-a="cvis">${c.visible?'Απόκρυψη':'Εμφάνιση'}</button><button data-a="cren">Μετονομασία</button>
       <button class="dng" data-a="cdel">Διαγραφή</button><button class="pri" data-a="iadd">Νέο πιάτο</button></div>`+
-      its.map(i=>`<div class="it ${i.available?'':'off'}" data-i="${i.id}"><div class="t">${esc(i.name)}<small>${esc(i.name_en)}${i.description?' · '+esc(i.description):''}${i.allergens?' · Αλλεργιογόνα: '+esc(i.allergens):''}</small></div>
+      its.map(i=>`<div class="it ${i.available?'':'off'}" data-i="${i.id}" draggable="true" title="Σύρε για αλλαγή σειράς"><div class="t">${esc(i.name)}<small>${esc(i.name_en)}${i.description?' · '+esc(i.description):''}${i.allergens?' · Αλλεργιογόνα: '+esc(i.allergens):''}</small></div>
         <span class="pr">${money(i.price)} ${esc(D.settings.currency)}</span>
         <button class="ic" data-a="iup">↑</button><button class="ic" data-a="idn">↓</button>
         <button data-a="iav">${i.available?'Εξαντλήθηκε':'Διαθέσιμο'}</button><button data-a="ied">Επεξεργασία</button><button class="dng" data-a="idel">Διαγραφή</button></div>`).join('')+'</div>'}).join('');
@@ -204,6 +204,35 @@ async function move(list,id,dir,table){
   const ids=list.map(x=>x.id),i=ids.indexOf(id),j=i+dir;if(j<0||j>=ids.length)return;
   [ids[i],ids[j]]=[ids[j],ids[i]];await api('/admin/reorder','POST',{table,ids});load()}
 
+let dragRow=null;
+$('#cats').addEventListener('dragstart',e=>{
+  const row=e.target.closest('.cat[data-c],.it[data-i]');if(!row)return;
+  if($('#q').value.trim()||$('#fc').value||$('#fs').value)return;
+  dragRow=row;row.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',row.dataset.i||row.dataset.c);
+});
+$('#cats').addEventListener('dragend',()=>{$('#cats .dragging,#cats .drop-target').forEach(x=>x.classList.remove('dragging','drop-target'));dragRow=null});
+$('#cats').addEventListener('dragover',e=>{
+  if(!dragRow)return;
+  const target=e.target.closest('.cat[data-c],.it[data-i]');if(!target||target===dragRow)return;
+  if(dragRow.classList.contains('it')!==target.classList.contains('it'))return;
+  if(dragRow.classList.contains('it')&&dragRow.closest('.cat')!==target.closest('.cat'))return;
+  e.preventDefault();$('#cats .drop-target').forEach(x=>x.classList.remove('drop-target'));target.classList.add('drop-target');
+});
+$('#cats').addEventListener('drop',async e=>{
+  if(!dragRow)return;
+  const target=e.target.closest('.cat[data-c],.it[data-i]');if(!target||target===dragRow)return;
+  if(dragRow.classList.contains('it')!==target.classList.contains('it'))return;
+  if(dragRow.classList.contains('it')&&dragRow.closest('.cat')!==target.closest('.cat'))return;
+  e.preventDefault();
+  const isItem=dragRow.classList.contains('it'),parent=isItem?dragRow.closest('.cat'):$('#cats');
+  const rows=[...parent.querySelectorAll(isItem?':scope > .it':':scope > .cat')];
+  const ids=rows.map(x=>Number(isItem?x.dataset.i:x.dataset.c));
+  const from=ids.indexOf(Number(isItem?dragRow.dataset.i:dragRow.dataset.c)),to=ids.indexOf(Number(isItem?target.dataset.i:target.dataset.c));
+  if(from<0||to<0)return;
+  ids.splice(to,0,ids.splice(from,1)[0]);
+  try{await api('/admin/reorder','POST',{table:isItem?'items':'categories',ids});await load()}catch(x){fail(x)}
+});
 $('#cats').addEventListener('click',async e=>{
   const b=e.target.closest('button[data-a]');if(!b)return;
   const a=b.dataset.a,cid=+b.closest('.cat').dataset.c,c=D.categories.find(x=>x.id===cid);
