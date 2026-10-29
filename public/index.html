@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Μενού</title>
+<style>
+:root{--bg:#faf8f3;--ink:#1c2a33;--sea:#134558;--gold:#d9a53b;--mute:#6b7780;--line:#cfcbbf}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--sea);color:#fff;padding:34px 20px 26px;text-align:center;border-bottom:5px solid var(--gold);position:relative}
+h1{font:700 clamp(32px,9vw,52px)/1.05 Georgia,"Times New Roman",serif;margin:0}
+header p{margin:8px 0 0;opacity:.9}
+header .ad{font-size:14px;opacity:.7;margin-top:2px}
+.lang{position:absolute;top:12px;right:12px;display:flex;border:1px solid #ffffff77;border-radius:99px;overflow:hidden}
+.lang button{background:transparent;border:0;color:#fff;padding:6px 12px;font:600 13px system-ui;cursor:pointer}
+.lang button.on{background:var(--gold);color:#2a1d00}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);display:flex;gap:8px;overflow-x:auto;padding:10px 14px;scrollbar-width:none}
+nav a{flex:none;padding:7px 14px;border:1px solid var(--sea);border-radius:99px;color:var(--sea);text-decoration:none;font-size:15px;white-space:nowrap}
+nav a:active,nav a:focus-visible{background:var(--sea);color:#fff;outline:none}
+main{max-width:720px;margin:0 auto;padding:6px 18px 30px}
+section{scroll-margin-top:62px;padding-top:26px}
+h2{font:700 26px/1.2 Georgia,serif;color:var(--sea);margin:0 0 14px;padding-bottom:8px;border-bottom:2px solid var(--gold)}
+.it{margin:0 0 15px}
+.row{display:flex;align-items:baseline;gap:8px}
+.row b{font-weight:600}
+.dots{flex:1;border-bottom:2px dotted var(--line);transform:translateY(-4px);min-width:16px}
+.pr{font-weight:700;color:var(--sea);white-space:nowrap}
+.ds{margin:2px 0 0;color:var(--mute);font-size:15px}
+.off{opacity:.5}.off .pr{text-decoration:line-through}
+.tag{font-size:12px;color:#a33a2a;margin-left:6px;font-weight:400}
+footer{text-align:center;color:var(--mute);font-size:14px;padding:0 20px 40px}
+.msg{text-align:center;padding:60px 20px;color:var(--mute)}
+</style>
+</head>
+<body>
+<header><div class="lang"><button data-l="el">EL</button><button data-l="en">EN</button></div>
+<h1 id="n">Μενού</h1><p id="t"></p><div class="ad" id="a"></div></header>
+<nav id="nav"></nav>
+<main id="m"><p class="msg">…</p></main>
+<footer id="f"></footer>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const T={el:{off:'Εξαντλήθηκε',empty:'Το μενού θα είναι σύντομα διαθέσιμο.',err:'Δεν φορτώθηκε το μενού. Ανανεώστε τη σελίδα.',cats:'Κατηγορίες'},
+         en:{off:'Sold out',empty:'The menu will be available soon.',err:'The menu could not be loaded. Please refresh.',cats:'Categories'}};
+let lang='el',M=null;
+try{lang=localStorage.getItem('lang')||((navigator.language||'').startsWith('el')?'el':'en')}catch(e){}
+function draw(){
+  const {settings:s,categories:cs}=M,en=lang==='en',tr=T[lang];
+  document.documentElement.lang=lang;document.title=s.name;
+  document.querySelectorAll('.lang button').forEach(b=>b.classList.toggle('on',b.dataset.l===lang));
+  n.textContent=s.name;t.textContent=(en&&s.tagline_en)||s.tagline;a.textContent=s.address;f.textContent=(en&&s.footer_en)||s.footer;
+  nav.setAttribute('aria-label',tr.cats);
+  const price=p=>p>0?p.toFixed(2).replace('.',',')+' '+esc(s.currency):'';
+  if(!cs.length){nav.innerHTML='';m.innerHTML=`<p class="msg">${tr.empty}</p>`;return}
+  const nm=(el,e)=>esc(en&&e?e:el);
+  nav.innerHTML=cs.map(c=>`<a href="#c${c.id}">${nm(c.name,c.name_en)}</a>`).join('');
+  m.innerHTML=cs.map(c=>`<section id="c${c.id}"><h2>${nm(c.name,c.name_en)}</h2>`+c.items.map(i=>`
+    <div class="it ${i.available?'':'off'}"><div class="row"><b>${nm(i.name,i.name_en)}${i.available?'':`<span class="tag">${tr.off}</span>`}</b><span class="dots"></span><span class="pr">${price(i.price)}</span></div>
+    ${(en&&i.description_en)||i.description?`<p class="ds">${nm(i.description,i.description_en)}</p>`:''}</div>`).join('')+'</section>').join('');
+}
+document.querySelectorAll('.lang button').forEach(b=>b.onclick=()=>{lang=b.dataset.l;try{localStorage.setItem('lang',lang)}catch(e){}if(M)draw()});
+fetch('/api/menu').then(r=>r.json()).then(j=>{M=j;draw();
+  try{if(!sessionStorage.getItem('v')){sessionStorage.setItem('v','1');fetch('/api/view',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lang})})}}catch(e){}
+}).catch(()=>{m.innerHTML=`<p class="msg">${T[lang].err}</p>`});
+</script>
+</body>
+</html>

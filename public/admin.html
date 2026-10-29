@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Διαχείριση μενού</title>
+<style>
+:root{--sea:#134558;--sea2:#1d5a70;--gold:#d9a53b;--bg:#faf8f3;--ink:#1c2a33;--mute:#6b7780;--line:#e3dfd5;--red:#b0402e;--ok:#2f7d57}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+[hidden]{display:none!important}
+h1,h2,h3,.brand b{font-family:Georgia,"Times New Roman",serif}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer;border:1px solid var(--sea);background:#fff;color:var(--sea);border-radius:10px;padding:8px 13px}
+button.pri{background:var(--sea);color:#fff}button.gold{background:var(--gold);border-color:var(--gold);color:#2a1d00;font-weight:600}
+button.dng{border-color:var(--red);color:var(--red)}button.ic{padding:6px 10px;min-width:38px}
+:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
+input,textarea,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+label{display:block;margin:12px 0 4px;font-weight:600;font-size:14px}
+#login{max-width:340px;margin:20vh auto;padding:0 20px}
+#login h1{color:var(--sea)}
+.err{color:var(--red);min-height:1.4em}.ok{color:var(--ok)}
+.shell{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+aside{background:var(--sea);color:#fff;padding:18px 12px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:14px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 6px}
+.brand i{width:42px;height:42px;border-radius:12px;background:var(--gold);color:#2a1d00;display:grid;place-items:center;font:700 22px Georgia,serif;font-style:normal}
+.brand b{font-size:20px;display:block;line-height:1.1}.brand small{opacity:.7;font-size:11px;letter-spacing:.08em}
+#nv{display:flex;flex-direction:column;gap:3px;flex:1}
+#nv button{background:transparent;border:0;color:#cfe3ea;text-align:left;padding:11px 12px;border-radius:10px}
+#nv button.on{background:#ffffff22;color:#fff;font-weight:600}
+.sf{display:flex;flex-direction:column;gap:6px}
+.sf a,.sf button{color:#fff;border:1px solid #ffffff44;background:transparent;border-radius:10px;padding:9px 12px;text-decoration:none;text-align:center}
+main{padding:28px;max-width:980px;width:100%}
+main h1{font-size:34px;margin:0 0 4px;color:var(--sea)}.sub{color:var(--mute);margin:0 0 20px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.stat,.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px}
+.stat b{font:700 30px Georgia,serif;color:var(--sea);display:block}.stat span{color:var(--mute);font-size:14px}
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:6px}
+.links button{padding:18px;text-align:left;border-radius:14px;font-weight:600}
+.tools{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.bt{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.cat{background:#fff;border:1px solid var(--line);border-radius:14px;margin:14px 0;overflow:hidden}
+.cat>.h{display:flex;gap:6px;align-items:center;padding:10px 12px;background:#efece3;flex-wrap:wrap}
+.cat>.h b{flex:1;min-width:140px;font:700 18px Georgia,serif;color:var(--sea)}.cat>.h small{font-weight:400;color:var(--mute);font-family:system-ui}
+.cat.hid>.h b{opacity:.5}
+.it{display:flex;gap:8px;align-items:center;padding:9px 12px;border-top:1px solid var(--line);flex-wrap:wrap}
+.it .t{flex:1;min-width:150px}.it .t small{display:block;color:var(--mute)}
+.it.off .t{opacity:.5}.pr{font-weight:700;min-width:70px;text-align:right}
+.trr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.trr.cat{background:#efece3;border-radius:10px;padding:8px;margin:12px 0 0;border:0;font-weight:700;overflow:visible}
+.chart{display:flex;gap:6px;align-items:flex-end;height:170px;margin-top:10px}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:12px}
+.bar i{display:block;width:100%;background:var(--sea2);border-radius:6px 6px 0 0;min-height:2px}.bar small{color:var(--mute)}
+dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::backdrop{background:#0008}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btns a{display:inline-block;text-decoration:none;border:1px solid var(--sea);color:var(--sea);border-radius:10px;padding:8px 13px;background:#fff}
+.qr img{width:200px;height:200px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:820px){
+ .shell{grid-template-columns:1fr}aside{position:static;height:auto;padding:12px}
+ #nv{flex-direction:row;overflow-x:auto}#nv button{white-space:nowrap}.sf{flex-direction:row}
+ main{padding:16px}.tools,.two{grid-template-columns:1fr}.trr{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="login" hidden>
+  <form id="lf"><h1>Διαχείριση μενού</h1>
+    <label for="pw">Κωδικός</label><input id="pw" type="password" autocomplete="current-password" required>
+    <p class="err" id="le"></p><button class="pri" style="width:100%">Είσοδος</button></form>
+</div>
+
+<div id="app" class="shell" hidden>
+  <aside>
+    <div class="brand"><i id="logo">M</i><div><b id="bn">Μενού</b><small>ΔΙΑΧΕΙΡΙΣΗ MENU</small></div></div>
+    <nav id="nv">
+      <button data-t="dash" class="on">Dashboard</button><button data-t="prod">Προϊόντα</button>
+      <button data-t="tr">Μεταφράσεις</button><button data-t="price">Τιμές</button>
+      <button data-t="print">PDF, QR, Table tents</button><button data-t="stats">Αναλυτικά</button><button data-t="set">Ρυθμίσεις</button>
+    </nav>
+    <div class="sf"><a href="/" target="_blank">Δημόσιο μενού</a><button id="out">Έξοδος</button></div>
+  </aside>
+
+  <main>
+    <section id="t-dash">
+      <h1>Καλώς ήρθατε</h1><p class="sub">Πίνακας διαχείρισης ψηφιακού μενού</p>
+      <div class="stats" id="ds"></div>
+      <div class="links">
+        <button data-go="prod">Διαχείριση προϊόντων</button><button data-go="tr">Μεταφράσεις EL/EN</button>
+        <button data-go="price">Μαζική αλλαγή τιμών</button><button data-go="print">PDF, QR και Table tents</button>
+      </div>
+    </section>
+
+    <section id="t-prod" hidden>
+      <h1>Προϊόντα</h1><p class="sub">Κατηγορίες και πιάτα του μενού</p>
+      <div class="tools"><input id="q" placeholder="Αναζήτηση προϊόντος…" aria-label="Αναζήτηση">
+        <select id="fc" aria-label="Κατηγορία"></select>
+        <select id="fs" aria-label="Κατάσταση"><option value="">Όλα</option><option value="on">Διαθέσιμα</option><option value="off">Εξαντλημένα</option></select></div>
+      <div class="bt"><button class="pri" id="addcat">Νέα κατηγορία</button><button class="gold" id="additem">Νέο πιάτο</button></div>
+      <div id="cats"></div>
+    </section>
+
+    <section id="t-tr" hidden>
+      <h1>Μεταφράσεις</h1><p class="sub" id="trs"></p>
+      <div class="trr" style="border:0;font-weight:700"><span>Ελληνικά</span><span>English</span><span>Περιγραφή (English)</span></div>
+      <div id="trb"></div>
+      <div class="bt" style="margin-top:14px"><button class="pri" id="trsave">Αποθήκευση μεταφράσεων</button></div><p id="trm"></p>
+    </section>
+
+    <section id="t-price" hidden>
+      <h1>Τιμές</h1><p class="sub">Αλλάξτε μαζικά τις τιμές, π.χ. +5% σε όλο το μενού ή μόνο στα ψάρια</p>
+      <div class="card" style="max-width:480px">
+        <label>Κατηγορία</label><select id="pc"></select>
+        <label>Ποσοστό αλλαγής (%) — π.χ. 5 για αύξηση, -10 για μείωση</label><input id="pp" inputmode="decimal" placeholder="5">
+        <label>Στρογγυλοποίηση</label>
+        <select id="pst"><option value="0.1">Στα 10 λεπτά</option><option value="0.5">Στα 50 λεπτά</option><option value="1">Στο ευρώ</option><option value="0.05">Στα 5 λεπτά</option><option value="0">Χωρίς</option></select>
+        <p class="err" id="pe"></p><button class="pri" id="pgo">Εφαρμογή</button></div>
+    </section>
+
+    <section id="t-print" hidden>
+      <h1>PDF, QR και Table tents</h1><p class="sub">Εκτύπωση και ψηφιακό μενού</p>
+      <div class="two">
+        <div class="card qr"><h3 style="margin-top:0">QR code μενού</h3><p>Διεύθυνση: <a id="url" target="_blank"></a></p>
+          <img src="/qr.png?size=400" alt="QR code μενού">
+          <div class="btns"><a href="/qr.png?download=1&size=2000">Λήψη PNG</a><a href="/qr.svg?download=1">Λήψη SVG</a><a href="/print?mode=qr" target="_blank">Κάρτα QR A4</a></div></div>
+        <div class="card"><h3 style="margin-top:0">Εκτυπώσιμο μενού (PDF)</h3>
+          <p>Ανοίγει σε A4, δίγλωσσο. Στην εκτύπωση διάλεξε «Αποθήκευση ως PDF».</p>
+          <div class="btns"><a href="/print" target="_blank">Άνοιγμα για εκτύπωση</a></div>
+          <h3>Table tents</h3><p>Έξι κάρτες ανά A4 με QR, έτοιμες για κοπή και δίπλωμα.</p>
+          <div class="btns"><a href="/print?mode=tents" target="_blank">Άνοιγμα table tents</a></div></div>
+      </div>
+    </section>
+
+    <section id="t-stats" hidden>
+      <h1>Αναλυτικά</h1><p class="sub">Επισκέψεις στο ψηφιακό μενού (μία ανά επισκέπτη και συνεδρία)</p>
+      <div class="stats" id="ss"></div>
+      <div class="card"><b>Τελευταίες 14 ημέρες</b><div class="chart" id="chart"></div></div>
+    </section>
+
+    <section id="t-set" hidden>
+      <h1>Ρυθμίσεις</h1><p class="sub">Στοιχεία που εμφανίζονται στο μενού και στο PDF</p>
+      <div class="card" style="max-width:560px"><div id="sf"></div><p class="err" id="se"></p><button class="pri" id="ssave">Αποθήκευση</button></div>
+    </section>
+  </main>
+</div>
+
+<dialog id="dlg"><form id="df" method="dialog">
+  <h3 id="dt" style="margin:0 0 4px">Πιάτο</h3>
+  <label>Όνομα (Ελληνικά)</label><input id="d-name" required maxlength="150">
+  <label>Όνομα (English)</label><input id="d-nameen" maxlength="150">
+  <label>Περιγραφή (Ελληνικά)</label><textarea id="d-desc" rows="2" maxlength="400"></textarea>
+  <label>Περιγραφή (English)</label><textarea id="d-descen" rows="2" maxlength="400"></textarea>
+  <div class="two"><div><label>Τιμή</label><input id="d-price" inputmode="decimal" placeholder="0,00"></div>
+  <div><label>Κατηγορία</label><select id="d-cat"></select></div></div>
+  <label style="display:flex;gap:8px;align-items:center"><input id="d-av" type="checkbox" style="width:auto"> Διαθέσιμο</label>
+  <p class="err" id="de"></p>
+  <div class="btns"><button class="pri" value="ok">Αποθήκευση</button><button type="button" id="dc">Άκυρο</button></div>
+</form></dialog>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=p=>Number(p).toFixed(2).replace('.',',');
+const SF=[['name','Όνομα ταβέρνας'],['tagline','Υπότιτλος (Ελληνικά)'],['tagline_en','Υπότιτλος (English)'],['address','Διεύθυνση / περιοχή'],['footer','Κείμενο στο κάτω μέρος (Ελληνικά)'],['footer_en','Κείμενο στο κάτω μέρος (English)'],['currency','Νόμισμα']];
+let D=null,ST={rows:[],total:0},editId=null;
+
+async function api(p,m='GET',b){
+  const r=await fetch('/api'+p,{method:m,headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined});
+  if(r.status===401&&p!=='/login'){view(false);throw new Error('Απαιτείται σύνδεση')}
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Σφάλμα');return j}
+const view=on=>{$('#login').hidden=on;$('#app').hidden=!on};
+const fail=e=>alert(e.message);
+const all=()=>D.categories.flatMap(c=>c.items);
+
+async function load(){D=await api('/admin/menu');ST=await api('/admin/stats');view(true);renderAll()}
+function renderAll(){head();dash();opts();prod();tr();settings();stats()}
+function head(){const n=D.settings.name;$('#bn').textContent=n;$('#logo').textContent=[...n][0]||'M';document.title='Διαχείριση – '+n}
+function views(days){const lim=new Date(Date.now()-(days-1)*864e5).toISOString().slice(0,10);return ST.rows.filter(r=>r.day>=lim).reduce((a,r)=>a+r.n,0)}
+function dash(){const it=all(),on=it.filter(i=>i.available).length;
+  $('#ds').innerHTML=[[it.length,'Σύνολο προϊόντων'],[on,'Ενεργά'],[it.length-on,'Εξαντλημένα'],[D.categories.length,'Κατηγορίες'],[views(7),'Επισκέψεις 7 ημερών']].map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('')}
+function opts(){const o=D.categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  const v=$('#fc').value;$('#fc').innerHTML='<option value="">Όλες οι κατηγορίες</option>'+o;$('#fc').value=v;
+  $('#pc').innerHTML='<option value="">Όλο το μενού</option>'+o}
+
+function prod(){
+  const q=$('#q').value.trim().toLowerCase(),fc=$('#fc').value,fs=$('#fs').value;
+  const html=D.categories.filter(c=>!fc||String(c.id)===fc).map(c=>{
+    const its=c.items.filter(i=>(!q||(i.name+' '+i.name_en).toLowerCase().includes(q))&&(!fs||(fs==='on')===!!i.available));
+    if((q||fs)&&!its.length)return '';
+    return `<div class="cat ${c.visible?'':'hid'}" data-c="${c.id}"><div class="h"><b>${esc(c.name)}${c.name_en?` <small>${esc(c.name_en)}</small>`:''}${c.visible?'':' (κρυφή)'}</b>
+      <button class="ic" data-a="cup" title="Πάνω">↑</button><button class="ic" data-a="cdn" title="Κάτω">↓</button>
+      <button data-a="cvis">${c.visible?'Απόκρυψη':'Εμφάνιση'}</button><button data-a="cren">Μετονομασία</button>
+      <button class="dng" data-a="cdel">Διαγραφή</button><button class="pri" data-a="iadd">Νέο πιάτο</button></div>`+
+      its.map(i=>`<div class="it ${i.available?'':'off'}" data-i="${i.id}"><div class="t">${esc(i.name)}<small>${esc(i.name_en)}${i.description?' · '+esc(i.description):''}</small></div>
+        <span class="pr">${money(i.price)} ${esc(D.settings.currency)}</span>
+        <button class="ic" data-a="iup">↑</button><button class="ic" data-a="idn">↓</button>
+        <button data-a="iav">${i.available?'Εξαντλήθηκε':'Διαθέσιμο'}</button><button data-a="ied">Επεξεργασία</button><button class="dng" data-a="idel">Διαγραφή</button></div>`).join('')+'</div>'}).join('');
+  $('#cats').innerHTML=html||'<p>Δεν βρέθηκαν αποτελέσματα.</p>'}
+['#q','#fc','#fs'].forEach(s=>$(s).addEventListener('input',prod));
+
+async function move(list,id,dir,table){
+  const ids=list.map(x=>x.id),i=ids.indexOf(id),j=i+dir;if(j<0||j>=ids.length)return;
+  [ids[i],ids[j]]=[ids[j],ids[i]];await api('/admin/reorder','POST',{table,ids});load()}
+
+$('#cats').addEventListener('click',async e=>{
+  const b=e.target.closest('button[data-a]');if(!b)return;
+  const a=b.dataset.a,cid=+b.closest('.cat').dataset.c,c=D.categories.find(x=>x.id===cid);
+  const ie=b.closest('[data-i]'),iid=ie&&+ie.dataset.i,it=iid&&c.items.find(x=>x.id===iid);
+  try{
+    if(a==='cup')await move(D.categories,cid,-1,'categories');
+    else if(a==='cdn')await move(D.categories,cid,1,'categories');
+    else if(a==='cvis'){await api('/admin/categories/'+cid,'PUT',{visible:!c.visible});load()}
+    else if(a==='cren'){const n=prompt('Όνομα κατηγορίας (Ελληνικά)',c.name);if(!n)return;const en=prompt('Όνομα κατηγορίας (English)',c.name_en||'');await api('/admin/categories/'+cid,'PUT',{name:n,name_en:en||''});load()}
+    else if(a==='cdel'){if(confirm(`Διαγραφή της κατηγορίας «${c.name}» και όλων των πιάτων της;`)){await api('/admin/categories/'+cid,'DELETE');load()}}
+    else if(a==='iadd')openDlg(null,cid);
+    else if(a==='ied')openDlg(it,cid);
+    else if(a==='iup')await move(c.items,iid,-1,'items');
+    else if(a==='idn')await move(c.items,iid,1,'items');
+    else if(a==='iav'){await api('/admin/items/'+iid,'PUT',{available:it.available?0:1});load()}
+    else if(a==='idel'){if(confirm(`Διαγραφή του «${it.name}»;`)){await api('/admin/items/'+iid,'DELETE');load()}}
+  }catch(x){fail(x)}});
+
+$('#addcat').onclick=async()=>{const n=prompt('Όνομα κατηγορίας (Ελληνικά)');if(!n)return;const en=prompt('Όνομα κατηγορίας (English)')||'';
+  try{await api('/admin/categories','POST',{name:n,name_en:en});load()}catch(x){fail(x)}};
+$('#additem').onclick=()=>D.categories.length?openDlg(null,+($('#fc').value||D.categories[0].id)):alert('Φτιάξτε πρώτα μια κατηγορία.');
+
+function openDlg(it,cid){
+  editId=it?it.id:null;$('#dt').textContent=it?'Επεξεργασία πιάτου':'Νέο πιάτο';$('#de').textContent='';
+  $('#d-cat').innerHTML=D.categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  $('#d-name').value=it?it.name:'';$('#d-nameen').value=it?it.name_en:'';$('#d-desc').value=it?it.description:'';$('#d-descen').value=it?it.description_en:'';
+  $('#d-price').value=it?money(it.price):'';$('#d-cat').value=cid;$('#d-av').checked=it?!!it.available:true;
+  $('#dlg').showModal();$('#d-name').focus()}
+$('#dc').onclick=()=>$('#dlg').close();
+$('#df').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const body={name:$('#d-name').value,name_en:$('#d-nameen').value,description:$('#d-desc').value,description_en:$('#d-descen').value,price:$('#d-price').value,category_id:+$('#d-cat').value,available:$('#d-av').checked?1:0};
+  try{await api(editId?'/admin/items/'+editId:'/admin/items',editId?'PUT':'POST',body);$('#dlg').close();load()}
+  catch(x){$('#de').textContent=x.message}});
+
+function tr(){
+  const miss=all().filter(i=>!i.name_en).length;
+  $('#trs').textContent=miss?`${miss} προϊόντα δεν έχουν αγγλικό όνομα.`:'Όλα τα προϊόντα έχουν αγγλικό όνομα.';
+  $('#trb').innerHTML=D.categories.map(c=>`<div class="trr cat" data-cat="${c.id}"><span>${esc(c.name)}</span><input class="n" value="${esc(c.name_en)}" placeholder="English"><span></span></div>`+
+    c.items.map(i=>`<div class="trr" data-it="${i.id}"><span>${esc(i.name)}</span><input class="n" value="${esc(i.name_en)}" placeholder="English name"><input class="d" value="${esc(i.description_en)}" placeholder="English description"></div>`).join('')).join('')}
+$('#trsave').onclick=async()=>{
+  const categories=$$('#trb [data-cat]').map(r=>({id:+r.dataset.cat,name_en:r.querySelector('.n').value}));
+  const items=$$('#trb [data-it]').map(r=>({id:+r.dataset.it,name_en:r.querySelector('.n').value,description_en:r.querySelector('.d').value}));
+  try{await api('/admin/translations','PUT',{categories,items});$('#trm').className='ok';$('#trm').textContent='Αποθηκεύτηκε';await load()}catch(x){fail(x)}};
+
+$('#pgo').onclick=async()=>{
+  const cid=$('#pc').value,p=$('#pp').value;$('#pe').textContent='';
+  const n=cid?D.categories.find(c=>String(c.id)===cid).items.length:all().length;
+  if(!p||isNaN(parseFloat(p.replace(',','.')))){$('#pe').textContent='Γράψτε ένα ποσοστό, π.χ. 5';return}
+  if(!confirm(`Αλλαγή τιμών ${p}% σε ${n} προϊόντα;`))return;
+  try{const r=await api('/admin/bulk-price','POST',{category_id:cid?+cid:null,percent:p,step:+$('#pst').value});alert(`Ενημερώθηκαν ${r.updated} τιμές.`);$('#pp').value='';load()}catch(x){$('#pe').textContent=x.message}};
+
+function stats(){
+  const by={},ln={el:0,en:0};ST.rows.forEach(r=>{by[r.day]=(by[r.day]||0)+r.n;ln[r.lang]+=r.n});
+  $('#ss').innerHTML=[[views(1),'Σήμερα'],[views(7),'7 ημέρες'],[views(30),'30 ημέρες'],[ST.total,'Σύνολο'],[ln.en,'Αγγλικά (30 ημ.)']].map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+  const days=[...Array(14)].map((_,i)=>new Date(Date.now()-(13-i)*864e5).toISOString().slice(0,10));
+  const max=Math.max(1,...days.map(d=>by[d]||0));
+  $('#chart').innerHTML=days.map(d=>`<div class="bar"><b>${by[d]||0}</b><i style="height:${(by[d]||0)/max*100}%"></i><small>${d.slice(8)}/${d.slice(5,7)}</small></div>`).join('')}
+
+function settings(){
+  $('#sf').innerHTML=SF.map(([k,l])=>`<label>${l}</label><input id="s-${k}" value="${esc(D.settings[k])}">`).join('');
+  fetch('/api/info').then(r=>r.json()).then(j=>{$('#url').textContent=j.url;$('#url').href=j.url})}
+$('#ssave').onclick=async()=>{
+  const b={};SF.forEach(([k])=>b[k]=$('#s-'+k).value);
+  try{await api('/admin/settings','PUT',b);$('#se').className='ok';$('#se').textContent='Αποθηκεύτηκε';await load()}catch(x){$('#se').className='err';$('#se').textContent=x.message}};
+
+function go(t){$$('#nv [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));$$('main > section').forEach(s=>s.hidden=s.id!=='t-'+t)}
+$$('#nv [data-t]').forEach(b=>b.onclick=()=>go(b.dataset.t));
+$$('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
+$('#out').onclick=async()=>{await api('/logout','POST');view(false)};
+$('#lf').addEventListener('submit',async e=>{
+  e.preventDefault();$('#le').textContent='';
+  try{await api('/login','POST',{password:$('#pw').value});$('#pw').value='';load()}catch(x){$('#le').textContent=x.message}});
+load().catch(()=>view(false));
+</script>
+</body>
+</html>

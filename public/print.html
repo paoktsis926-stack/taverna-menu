@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Εκτύπωση</title>
+<style>
+@page{size:A4;margin:14mm}
+*{box-sizing:border-box}
+body{margin:0;color:#111;font:10.5pt/1.35 Georgia,"Times New Roman",serif;background:#eef0f2}
+.bar{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:12px;background:#134558;font-family:system-ui,sans-serif}
+.bar button,.bar a{background:#fff;color:#134558;border:0;border-radius:8px;padding:9px 16px;font:600 15px system-ui;text-decoration:none;cursor:pointer}
+.sheet{background:#fff;max-width:210mm;margin:16px auto;padding:14mm;min-height:297mm}
+.top{text-align:center;border-bottom:2.5pt solid #d9a53b;padding-bottom:6mm;margin-bottom:7mm}
+.top h1{margin:0;font-size:32pt;color:#134558}.top p{margin:1.5mm 0 0;color:#444}.top .ad{font-size:9.5pt;color:#777}
+.cols{column-count:2;column-gap:12mm}
+.cat{margin-bottom:6mm}
+.cat h2{font-size:14pt;color:#134558;margin:0 0 2.5mm;border-bottom:1.2pt solid #d9a53b;break-after:avoid}
+.it{margin-bottom:2.2mm;break-inside:avoid}
+.row{display:flex;align-items:baseline;gap:5px}.row b{font-weight:600}
+.dots{flex:1;border-bottom:1.2pt dotted #999;transform:translateY(-3px)}
+.pr{font-weight:700;white-space:nowrap}.off .pr{text-decoration:line-through}
+.en{font-size:8.5pt;color:#666;font-style:italic;margin:0}
+.ds{font-size:8.5pt;color:#555;margin:0}
+.foot{display:flex;align-items:center;gap:6mm;margin-top:7mm;padding-top:4mm;border-top:1pt solid #ccc;font-size:9pt}
+.foot img{width:24mm;height:24mm}
+.poster{text-align:center;padding-top:30mm}.poster h1{font-size:36pt;color:#134558;margin:0 0 4mm}
+.poster img{width:120mm;height:120mm}.poster p{font-size:18pt;margin:4mm 0}.poster i{color:#666}
+.tents{display:grid;grid-template-columns:1fr 1fr}
+.tent{height:88mm;border:1pt dashed #888;text-align:center;padding:6mm 4mm}
+.tent h2{margin:0 0 2mm;font-size:17pt;color:#134558}.tent img{width:46mm;height:46mm}
+.tent p{margin:2mm 0 0;font-size:10.5pt}.tent i{color:#666;font-size:9.5pt}
+@media print{body{background:#fff}.bar{display:none}.sheet{margin:0;padding:0;max-width:none;min-height:0}}
+</style>
+</head>
+<body>
+<div class="bar"><button onclick="print()">Εκτύπωση / Αποθήκευση PDF</button><a href="/print">Μενού</a><a href="/print?mode=qr">Κάρτα QR</a><a href="/print?mode=tents">Table tents</a><a href="/admin">Πίσω</a></div>
+<div class="sheet" id="r"></div>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+fetch('/api/menu').then(r=>r.json()).then(({settings:s,categories:cs})=>{
+  document.title=s.name;
+  const mode=new URLSearchParams(location.search).get('mode');
+  const scan='<p>Σκανάρετε για το μενού<br><i>Scan for the menu</i></p>';
+  if(mode==='qr'){r.innerHTML=`<div class="poster"><h1>${esc(s.name)}</h1><img src="/qr.svg" alt="QR">${scan}</div>`;return}
+  if(mode==='tents'){r.innerHTML='<div class="tents">'+Array(6).fill(`<div class="tent"><h2>${esc(s.name)}</h2><img src="/qr.svg" alt="QR">${scan}</div>`).join('')+'</div>';return}
+  const price=p=>p>0?p.toFixed(2).replace('.',',')+' '+esc(s.currency):'';
+  r.innerHTML=`<div class="top"><h1>${esc(s.name)}</h1><p>${esc(s.tagline)}</p><div class="ad">${esc(s.address)}</div></div><div class="cols">`+
+   cs.map(c=>`<div class="cat"><h2>${esc(c.name)}${c.name_en?` <small style="font-weight:400;font-style:italic;color:#666">${esc(c.name_en)}</small>`:''}</h2>`+
+    c.items.map(i=>`<div class="it ${i.available?'':'off'}"><div class="row"><b>${esc(i.name)}</b><span class="dots"></span><span class="pr">${price(i.price)}</span></div>${i.name_en?`<p class="en">${esc(i.name_en)}</p>`:''}${i.description?`<p class="ds">${esc(i.description)}</p>`:''}</div>`).join('')+'</div>').join('')+
+   `</div><div class="foot"><img src="/qr.svg" alt="QR"><div><b>Ψηφιακό μενού / Digital menu</b><br>${esc(s.footer)}<br><i>${esc(s.footer_en)}</i></div></div>`;
+});
+</script>
+</body>
+</html>
