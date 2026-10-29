@@ -28,7 +28,6 @@ body{margin:0;color:var(--ink);font:10pt/1.35 Georgia,"Times New Roman",serif;ba
 <div class="sheet" id="r"></div>
 <script>
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const safeUrl=s=>{try{const u=new URL(String(s||''),location.origin);return ['http:','https:'].includes(u.protocol)?u.href:''}catch{return ''}};
 fetch('/api/menu').then(r=>{if(!r.ok)throw Error();return r.json()}).then(({settings:s,categories:cs})=>{
  document.title=s.name+' — Εκτύπωση';const mode=new URLSearchParams(location.search).get('mode');
  const scan='<p>Σκανάρετε για το μενού<br><i>Scan for the menu</i></p>';
@@ -37,7 +36,7 @@ fetch('/api/menu').then(r=>{if(!r.ok)throw Error();return r.json()}).then(({sett
  const price=p=>Number(p)>0?Number(p).toFixed(2).replace('.',',')+' '+esc(s.currency):'';
  r.innerHTML='<div class="top"><div class="eyebrow">Ψηφιακός κατάλογος</div><h1>'+esc(s.name)+'</h1><p>'+esc(s.tagline)+'</p><p>'+esc(s.tagline_en)+'</p><div class="ad">'+esc(s.address)+'</div></div><div class="cols">'+
  cs.map(c=>'<div class="cat"><h2>'+esc(c.name)+(c.name_en?' <small style="font-weight:400;font-style:italic;color:#666">'+esc(c.name_en)+'</small>':'')+'</h2>'+
- c.items.map(i=>{const image=safeUrl(i.image_url);return '<div class="it '+(i.available?'':'off')+'">'+(image?'<img class="foodphoto" src="'+esc(image)+'" alt="">':'')+'<div class="row"><b>'+esc(i.name)+'</b><span class="dots"></span><span class="pr">'+price(i.price)+'</span></div>'+(i.name_en?'<p class="en">'+esc(i.name_en)+'</p>':'')+(i.description?'<p class="ds">'+esc(i.description)+'</p>':'')+(i.description_en?'<p class="ds">'+esc(i.description_en)+'</p>':'')+(i.allergens?'<div class="allergen">Αλλεργιογόνα: '+esc(i.allergens)+'</div>':'')+(i.allergens_en?'<div class="allergen">Allergens: '+esc(i.allergens_en)+'</div>':'')+'</div>').join('')+'</div>').join('')+
+ c.items.map(i=>'<div class="it '+(i.available?'':'off')+'"><div class="row"><b>'+esc(i.name)+'</b><span class="dots"></span><span class="pr">'+price(i.price)+'</span></div>'+(i.name_en?'<p class="en">'+esc(i.name_en)+'</p>':'')+(i.description?'<p class="ds">'+esc(i.description)+'</p>':'')+(i.description_en?'<p class="ds">'+esc(i.description_en)+'</p>':'')+(i.allergens?'<div class="allergen">Αλλεργιογόνα: '+esc(i.allergens)+'</div>':'')+(i.allergens_en?'<div class="allergen">Allergens: '+esc(i.allergens_en)+'</div>':'')+'</div>').join('')+'</div>').join('')+
  '</div><div class="foot"><img src="/qr.svg" alt="QR code"><div><b>Ψηφιακό μενού / Digital menu</b><br>'+esc(s.footer)+'<br><i>'+esc(s.footer_en)+'</i></div></div>';
 }).catch(()=>{r.innerHTML='<p>Δεν ήταν δυνατή η φόρτωση του μενού.</p>'});
 </script>
