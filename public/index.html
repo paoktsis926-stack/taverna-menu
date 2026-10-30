@@ -62,7 +62,7 @@ function draw(){
 }
 $('#q').addEventListener('input',draw);$('#available-only').addEventListener('change',draw);
 document.querySelectorAll('.lang button').forEach(b=>b.addEventListener('click',()=>{lang=b.dataset.l;try{localStorage.setItem('lang',lang)}catch(e){}draw()}));
-fetch('/api/menu').then(r=>{if(!r.ok)throw Error();return r.json()}).then(j=>{M=j;draw();try{if(!sessionStorage.getItem('v')){sessionStorage.setItem('v','1');fetch('/api/view',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lang})})}}catch(e){}}).catch(()=>{$('#m').innerHTML='<p class="msg">'+T[lang].err+'</p>'});
+fetch('/api/menu',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(j=>{M=j;draw();try{if(!sessionStorage.getItem('v')){sessionStorage.setItem('v','1');fetch('/api/view',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lang})})}}catch(e){}}).catch(()=>{$('#m').innerHTML='<p class="msg">'+T[lang].err+'</p>'});
 </script>
 </body>
 </html>
