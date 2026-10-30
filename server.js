@@ -85,7 +85,7 @@ app.post('/api/view', (req, res) => {
 
 const baseUrl = req => (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
 app.get('/qr.png', async (req, res) => {
-  const table = str(req.query.table, 40).replace(/[^\\p{L}\\p{N}_ -]/gu, '');
+  const table = str(req.query.table, 40).replace(/[^\p{L}\p{N}_ -]/gu, '')
   const target = baseUrl(req) + '/' + (table ? '?table=' + encodeURIComponent(table) : '');
   const buf = await QRCode.toBuffer(target, {
     width: Math.min(Math.max(+req.query.size || 1000, 200), 3000), margin: 2, errorCorrectionLevel: 'M' });
@@ -93,7 +93,7 @@ app.get('/qr.png', async (req, res) => {
   res.type('png').send(buf);
 });
 app.get('/qr.svg', async (req, res) => {
-  const table = str(req.query.table, 40).replace(/[^a-zA-Z0-9_-]/g, '');
+  const table = str(req.query.table, 40).replace(/[^\p{L}\p{N}_ -]/gu, '')
   const target = baseUrl(req) + '/' + (table ? '?table=' + encodeURIComponent(table) : '');
   const svg = await QRCode.toString(target, { type: 'svg', margin: 1, errorCorrectionLevel: 'M' });
   if (req.query.download) res.set('Content-Disposition', 'attachment; filename="menu-qr.svg"');
