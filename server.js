@@ -27,6 +27,7 @@ const applyInitialTranslations = db.transaction(() => {
   }
 });
 applyInitialTranslations();
+db.prepare("UPDATE items SET name_tr='Bouyiourdi' WHERE name='Μπουγιουρντί' AND name_tr='Buyурди'").run();
 
 const DEF = { name: 'Ψαροταβέρνα «Τα Μπαρμπούνια»', tagline: '', tagline_en: '', tagline_bg: '', tagline_tr: '', address: '', footer: '', footer_en: '', footer_bg: '', footer_tr: '', currency: '€' };
 const getSettings = () => {
