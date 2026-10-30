@@ -13,4 +13,5 @@ for (const file of files) {
     checked++;
   }
 }
+if (checked !== files.length) throw new Error('Δεν ελέγχθηκαν όλα τα inline scripts.');
 console.log('Έλεγχος σύνταξης επιτυχής:', checked, 'inline scripts.');
