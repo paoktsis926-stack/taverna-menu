@@ -45,7 +45,7 @@ main h1{font-size:34px;margin:0 0 4px;color:var(--sea)}.sub{color:var(--mute);ma
 .cat>.h b{flex:1;min-width:140px;font:700 18px Georgia,serif;color:var(--sea)}.cat>.h small{font-weight:400;color:var(--mute);font-family:system-ui}
 .cat.hid>.h b{opacity:.5}
 .it{display:flex;gap:8px;align-items:center;padding:9px 12px;border-top:1px solid var(--line);flex-wrap:wrap}
-.it .t{flex:1;min-width:150px}.it .t small{display:block;color:var(--mute)}
+.it .t{flex:1;min-width:150px}.it .thumb{width:48px;height:48px;object-fit:cover;border-radius:9px;border:1px solid var(--line);background:#eee}.it .t small{display:block;color:var(--mute)}
 .it.off .t{opacity:.5}.pr{font-weight:700;min-width:70px;text-align:right}
 .trr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
 .trr.cat{background:#efece3;border-radius:10px;padding:8px;margin:12px 0 0;border:0;font-weight:700;overflow:visible}
@@ -151,6 +151,8 @@ dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::ba
   <label>Όνομα (English)</label><input id="d-nameen" maxlength="150">
   <label>Περιγραφή (Ελληνικά)</label><textarea id="d-desc" rows="2" maxlength="400"></textarea>
   <label>Περιγραφή (English)</label><textarea id="d-descen" rows="2" maxlength="400"></textarea>
+  <label>URL φωτογραφίας (προαιρετικό)</label><input id="d-image" type="url" inputmode="url" maxlength="1000" placeholder="https://…">
+  <img id="d-image-preview" alt="Προεπισκόπηση φωτογραφίας" hidden style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;margin-top:8px">
   <div class="two"><div><label>Αλλεργιογόνα (Ελληνικά)</label><input id="d-allergens" maxlength="300" placeholder="π.χ. ψάρι, μαλάκια"></div><div><label>Αλλεργιογόνα (English)</label><input id="d-allergensen" maxlength="300" placeholder="e.g. fish, molluscs"></div></div>
   <div class="two"><div><label>Τιμή</label><input id="d-price" inputmode="decimal" placeholder="0,00"></div>
   <div><label>Κατηγορία</label><select id="d-cat"></select></div></div>
@@ -193,7 +195,7 @@ function prod(){
       <button class="ic" data-a="cup" title="Πάνω">↑</button><button class="ic" data-a="cdn" title="Κάτω">↓</button>
       <button data-a="cvis">${c.visible?'Απόκρυψη':'Εμφάνιση'}</button><button data-a="cren">Μετονομασία</button>
       <button class="dng" data-a="cdel">Διαγραφή</button><button class="pri" data-a="iadd">Νέο πιάτο</button></div>`+
-      its.map(i=>`<div class="it ${i.available?'':'off'}" data-i="${i.id}" draggable="true" title="Σύρε για αλλαγή σειράς"><div class="t">${esc(i.name)}<small>${esc(i.name_en)}${i.description?' · '+esc(i.description):''}${i.allergens?' · Αλλεργιογόνα: '+esc(i.allergens):''}</small></div>
+      its.map(i=>`<div class="it ${i.available?'':'off'}" data-i="${i.id}" draggable="true" title="Σύρε για αλλαγή σειράς">${i.image_url?`<img class="thumb" src="${esc(i.image_url)}" alt="" loading="lazy" onerror="this.remove()">`:''}<div class="t">${esc(i.name)}<small>${esc(i.name_en)}${i.description?' · '+esc(i.description):''}${i.allergens?' · Αλλεργιογόνα: '+esc(i.allergens):''}</small></div>
         <span class="pr">${money(i.price)} ${esc(D.settings.currency)}</span>
         <button class="ic" data-a="iup">↑</button><button class="ic" data-a="idn">↓</button>
         <button data-a="iav">${i.available?'Εξαντλήθηκε':'Διαθέσιμο'}</button><button data-a="ied">Επεξεργασία</button><button class="dng" data-a="idel">Διαγραφή</button></div>`).join('')+'</div>'}).join('');
@@ -259,12 +261,14 @@ function openDlg(it,cid){
   editId=it?it.id:null;$('#dt').textContent=it?'Επεξεργασία πιάτου':'Νέο πιάτο';$('#de').textContent='';
   $('#d-cat').innerHTML=D.categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
   $('#d-name').value=it?it.name:'';$('#d-nameen').value=it?it.name_en:'';$('#d-desc').value=it?it.description:'';$('#d-descen').value=it?it.description_en:'';
-  $('#d-price').value=it?money(it.price):'';$('#d-cat').value=cid;$('#d-av').checked=it?!!it.available:true;$('#d-allergens').value=it?it.allergens||'':'';$('#d-allergensen').value=it?it.allergens_en||'':'';
+  $('#d-price').value=it?money(it.price):'';$('#d-cat').value=cid;$('#d-av').checked=it?!!it.available:true;$('#d-image').value=it?it.image_url||'':'';previewImage();$('#d-allergens').value=it?it.allergens||'':'';$('#d-allergensen').value=it?it.allergens_en||'':'';
   $('#dlg').showModal();$('#d-name').focus()}
+function previewImage(){const src=$('#d-image').value.trim(),img=$('#d-image-preview');try{const u=new URL(src);if(!['http:','https:'].includes(u.protocol))throw Error();img.src=u.href;img.hidden=false}catch{img.removeAttribute('src');img.hidden=true}}
+$('#d-image').addEventListener('input',previewImage);
 $('#dc').onclick=()=>$('#dlg').close();
 $('#df').addEventListener('submit',async e=>{
   e.preventDefault();
-  const body={name:$('#d-name').value,name_en:$('#d-nameen').value,description:$('#d-desc').value,description_en:$('#d-descen').value,allergens:$('#d-allergens').value,allergens_en:$('#d-allergensen').value,price:$('#d-price').value,category_id:+$('#d-cat').value,available:$('#d-av').checked?1:0};
+  const body={name:$('#d-name').value,name_en:$('#d-nameen').value,description:$('#d-desc').value,description_en:$('#d-descen').value,image_url:$('#d-image').value.trim(),allergens:$('#d-allergens').value,allergens_en:$('#d-allergensen').value,price:$('#d-price').value,category_id:+$('#d-cat').value,available:$('#d-av').checked?1:0};
   try{await api(editId?'/admin/items/'+editId:'/admin/items',editId?'PUT':'POST',body);$('#dlg').close();load()}
   catch(x){$('#de').textContent=x.message}});
 
