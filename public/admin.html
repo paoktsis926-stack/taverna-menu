@@ -288,7 +288,7 @@ $('#dc').onclick=()=>$('#dlg').close();
 $('#df').addEventListener('submit',async e=>{
   e.preventDefault();
   try{
-    const body={name:$('#d-name').value,name_en:$('#d-nameen').value,description:$('#d-desc').value,description_en:$('#d-descen').value,image_url:$('#d-image').value.trim(),allergens:$('#d-allergens').value,allergens_en:$('#d-allergensen').value,allergen_codes:$('#allergen-options input:checked').map(x=>x.value),popular:$('#d-popular').checked?1:0,price:$('#d-price').value,category_id:+$('#d-cat').value,available:$('#d-av').checked?1:0};
+    const body={name:$('#d-name').value,name_en:$('#d-nameen').value,description:$('#d-desc').value,description_en:$('#d-descen').value,image_url:$('#d-image').value.trim(),allergens:$('#d-allergens').value,allergens_en:$('#d-allergensen').value,allergen_codes:$$('#allergen-options input:checked').map(x=>x.value),popular:$('#d-popular').checked?1:0,price:$('#d-price').value,category_id:+$('#d-cat').value,available:$('#d-av').checked?1:0};
     await api(editId?'/admin/items/'+editId:'/admin/items',editId?'PUT':'POST',body);
     $('#dlg').close();await load();
   }catch(x){$('#de').textContent=x.message}});
