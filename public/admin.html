@@ -47,7 +47,7 @@ main h1{font-size:34px;margin:0 0 4px;color:var(--sea)}.sub{color:var(--mute);ma
 .it{display:flex;gap:8px;align-items:center;padding:9px 12px;border-top:1px solid var(--line);flex-wrap:wrap}
 .it .t{flex:1;min-width:150px}.it .thumb{width:48px;height:48px;object-fit:cover;border-radius:9px;border:1px solid var(--line);background:#eee}.it .t small{display:block;color:var(--mute)}
 .it.off .t{opacity:.5}.pr{font-weight:700;min-width:70px;text-align:right}
-.trr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.trr{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:8px;align-items:start;padding:8px 0;border-top:1px solid var(--line);overflow-x:auto}.trr input{min-width:0}.trr .trcell{display:grid;gap:5px}.trr .trcell b{font-size:12px;color:var(--mute)}.trr.cat{grid-template-columns:repeat(4,minmax(170px,1fr))}
 .trr.cat{background:#efece3;border-radius:10px;padding:8px;margin:12px 0 0;border:0;font-weight:700;overflow:visible}
 .chart{display:flex;gap:6px;align-items:flex-end;height:170px;margin-top:10px}
 .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:12px}
@@ -103,7 +103,7 @@ dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::ba
 
     <section id="t-tr" hidden>
       <h1>Μεταφράσεις</h1><p class="sub" id="trs"></p>
-      <div class="trr" style="border:0;font-weight:700"><span>Ελληνικά</span><span>English</span><span>Περιγραφή (English)</span></div>
+      <p class="sub">Συμπληρώστε τις αποδόσεις για κάθε γλώσσα. Οι τιμές, οι φωτογραφίες και η διαθεσιμότητα δεν αλλάζουν.</p>
       <div id="trb"></div>
       <div class="bt" style="margin-top:14px"><button class="pri" id="trsave">Αποθήκευση μεταφράσεων</button></div><p id="trm"></p>
     </section>
@@ -295,13 +295,14 @@ $('#df').addEventListener('submit',async e=>{
 
 
 function tr(){
-  const miss=all().filter(i=>!i.name_en).length;
-  $('#trs').textContent=miss?`${miss} προϊόντα δεν έχουν αγγλικό όνομα.`:'Όλα τα προϊόντα έχουν αγγλικό όνομα.';
-  $('#trb').innerHTML=D.categories.map(c=>`<div class="trr cat" data-cat="${c.id}"><span>${esc(c.name)}</span><input class="n" value="${esc(c.name_en)}" placeholder="English"><span></span></div>`+
-    c.items.map(i=>`<div class="trr" data-it="${i.id}"><span>${esc(i.name)}</span><input class="n" value="${esc(i.name_en)}" placeholder="English name"><input class="d" value="${esc(i.description_en)}" placeholder="English description"></div>`).join('')).join('')}
+  const langs=['en','bg','tr'],missing=all().filter(i=>langs.some(l=>!i['name_'+l])).length;
+  $('#trs').textContent=missing?missing+' πιάτα χρειάζονται συμπλήρωση σε μία ή περισσότερες γλώσσες.':'Οι μεταφράσεις ονομάτων πιάτων είναι συμπληρωμένες.';
+  const cell=(lang,label,name,desc,allergen)=>'<div class="trcell"><b>'+label+'</b><input data-name="'+lang+'" value="'+esc(name||'')+'" placeholder="Όνομα πιάτου"><input data-desc="'+lang+'" value="'+esc(desc||'')+'" placeholder="Περιγραφή"><input data-allergen="'+lang+'" value="'+esc(allergen||'')+'" placeholder="Σημείωση αλλεργιογόνων"></div>';
+  $('#trb').innerHTML=D.categories.map(c=>'<div class="trr cat" data-cat="'+c.id+'"><div class="trcell"><b>Ελληνικά · '+esc(c.name)+'</b></div>'+langs.map(l=>'<div class="trcell"><b>'+({en:'English',bg:'Български',tr:'Türkçe'}[l])+'</b><input data-catname="'+l+'" value="'+esc(c['name_'+l]||'')+'" placeholder="Μετάφραση κατηγορίας"></div>').join('')+'</div>'+
+    c.items.map(i=>'<div class="trr" data-it="'+i.id+'"><div class="trcell"><b>Ελληνικά · '+esc(i.name)+'</b><small>'+esc(i.description||'')+'</small></div>'+cell('en','English',i.name_en,i.description_en,i.allergens_en)+cell('bg','Български',i.name_bg,i.description_bg,i.allergens_bg)+cell('tr','Türkçe',i.name_tr,i.description_tr,i.allergens_tr)+'</div>').join('')).join('')}
 $('#trsave').onclick=async()=>{
-  const categories=$$('#trb [data-cat]').map(r=>({id:+r.dataset.cat,name_en:r.querySelector('.n').value}));
-  const items=$$('#trb [data-it]').map(r=>({id:+r.dataset.it,name_en:r.querySelector('.n').value,description_en:r.querySelector('.d').value}));
+  const categories=$('#trb [data-cat]').map(r=>({id:+r.dataset.cat,...Object.fromEntries(['en','bg','tr'].map(l=>['name_'+l,r.querySelector('[data-catname="'+l+'"]').value]))}));
+  const items=$('#trb [data-it]').map(r=>{const o={id:+r.dataset.it};['en','bg','tr'].forEach(l=>{o['name_'+l]=r.querySelector('[data-name="'+l+'"]').value;o['description_'+l]=r.querySelector('[data-desc="'+l+'"]').value;o['allergens_'+l]=r.querySelector('[data-allergen="'+l+'"]').value});return o});
   try{await api('/admin/translations','PUT',{categories,items});$('#trm').className='ok';$('#trm').textContent='Αποθηκεύτηκε';await load()}catch(x){fail(x)}};
 
 $('#pgo').onclick=async()=>{
