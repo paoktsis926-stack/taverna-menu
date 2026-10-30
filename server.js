@@ -20,6 +20,7 @@ const getSettings = () => {
 const str = (v, max) => String(v ?? '').trim().slice(0, max);
 const num = v => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) && n >= 0 ? n : 0; };
 const bool = v => (v === false || v === 0 || v === '0' ? 0 : 1);
+const imageUrl = v => { const value = str(v, 1000); if (!value) return ''; try { const u = new URL(value); return ['http:', 'https:'].includes(u.protocol) ? u.href : null; } catch { return null; } };
 
 function getMenu(all) {
   const cats = db.prepare(`SELECT * FROM categories ${all ? '' : 'WHERE visible=1'} ORDER BY sort, id`).all();
@@ -49,9 +50,11 @@ const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(express.json({ limit: '1mb' }));
-app.use((req, res, next) => { res.set('X-Content-Type-Options', 'nosniff'); next(); });
+app.use((req, res, next) => { res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'SAMEORIGIN', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'Permissions-Policy': 'camera=(), microphone=(), geolocation=()', 'Cross-Origin-Resource-Policy': 'same-origin' }); next(); });
 
 app.get('/health', (req, res) => res.json({ ok: true }));
+app.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ' + baseUrl(req) + '/sitemap.xml\n'));
+app.get('/sitemap.xml', (req, res) => { const url = (baseUrl(req) + '/').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); res.type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>' + url + '</loc></url></urlset>'); });
 
 app.post('/api/login', (req, res) => {
   const a = attempts.get(req.ip) || { n: 0, t: Date.now() };
@@ -124,17 +127,21 @@ A.post('/items', (req, res) => {
   const b = req.body, name = str(b.name, 150);
   if (!name) return res.status(400).json({ error: 'Δώστε όνομα πιάτου' });
   if (!db.prepare('SELECT 1 FROM categories WHERE id=?').get(b.category_id)) return res.status(400).json({ error: 'Άκυρη κατηγορία' });
+  const image = imageUrl(b.image_url);
+  if (image === null) return res.status(400).json({ error: 'Η φωτογραφία πρέπει να έχει έγκυρο URL HTTP ή HTTPS.' });
   const sort = db.prepare('SELECT COALESCE(MAX(sort),0)+1 n FROM items WHERE category_id=?').get(b.category_id).n;
-  res.json({ id: db.prepare('INSERT INTO items(category_id,name,name_en,description,description_en,price,available,sort,allergens,allergens_en) VALUES(?,?,?,?,?,?,?,?,?,?)')
-    .run(b.category_id, name, str(b.name_en, 150), str(b.description, 400), str(b.description_en, 400), num(b.price), bool(b.available ?? 1), sort, str(b.allergens, 300), str(b.allergens_en, 300)).lastInsertRowid });
+  res.json({ id: db.prepare('INSERT INTO items(category_id,name,name_en,description,description_en,price,available,sort,allergens,allergens_en,image_url) VALUES(?,?,?,?,?,?,?,?,?,?,?)')
+    .run(b.category_id, name, str(b.name_en, 150), str(b.description, 400), str(b.description_en, 400), num(b.price), bool(b.available ?? 1), sort, str(b.allergens, 300), str(b.allergens_en, 300), image).lastInsertRowid });
 });
 A.put('/items/:id', (req, res) => {
   const it = db.prepare('SELECT * FROM items WHERE id=?').get(req.params.id);
   if (!it) return res.status(404).json({ error: 'Δεν βρέθηκε' });
   const b = { ...it, ...req.body }, name = str(b.name, 150);
   if (!name) return res.status(400).json({ error: 'Δώστε όνομα πιάτου' });
-  db.prepare('UPDATE items SET category_id=?,name=?,name_en=?,description=?,description_en=?,price=?,available=?,allergens=?,allergens_en=? WHERE id=?')
-    .run(b.category_id, name, str(b.name_en, 150), str(b.description, 400), str(b.description_en, 400), num(b.price), bool(b.available), str(b.allergens, 300), str(b.allergens_en, 300), it.id);
+  const image = imageUrl(b.image_url);
+  if (image === null) return res.status(400).json({ error: 'Η φωτογραφία πρέπει να έχει έγκυρο URL HTTP ή HTTPS.' });
+  db.prepare('UPDATE items SET category_id=?,name=?,name_en=?,description=?,description_en=?,price=?,available=?,allergens=?,allergens_en=?,image_url=? WHERE id=?')
+    .run(b.category_id, name, str(b.name_en, 150), str(b.description, 400), str(b.description_en, 400), num(b.price), bool(b.available), str(b.allergens, 300), str(b.allergens_en, 300), image, it.id);
   res.json({ ok: true });
 });
 A.delete('/items/:id', (req, res) => { db.prepare('DELETE FROM items WHERE id=?').run(req.params.id); res.json({ ok: true }); });
