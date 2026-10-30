@@ -2,10 +2,14 @@ const express = require('express');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 const path = require('path');
+const fs = require('fs');
 const db = require('./db');
 const { seed } = require('./seed');
 
 const PORT = process.env.PORT || 3000;
+const DATA_DIR = path.dirname(process.env.DB_PATH || path.join(__dirname, 'data', 'menu.db'));
+const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const SECRET = process.env.SESSION_SECRET || ADMIN_PASSWORD;
 if (!ADMIN_PASSWORD) { console.error('Λείπει η μεταβλητή ADMIN_PASSWORD'); process.exit(1); }
@@ -21,6 +25,7 @@ const str = (v, max) => String(v ?? '').trim().slice(0, max);
 const num = v => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) && n >= 0 ? n : 0; };
 const bool = v => (v === false || v === 0 || v === '0' ? 0 : 1);
 const imageUrl = v => { const value = str(v, 1000); if (!value) return ''; try { const u = new URL(value); return ['http:', 'https:'].includes(u.protocol) ? u.href : null; } catch { return null; } };
+const allergenCodes = v => { try { const a = Array.isArray(v) ? v : JSON.parse(String(v || '[]')); return JSON.stringify([...new Set(a.map(x => String(x)))].filter(x => /^(gluten|crustaceans|eggs|fish|peanuts|soybeans|milk|nuts|celery|mustard|sesame|sulphites|lupin|molluscs)$/.test(x))); } catch { return '[]'; } };
 
 function getMenu(all) {
   const cats = db.prepare(`SELECT * FROM categories ${all ? '' : 'WHERE visible=1'} ORDER BY sort, id`).all();
@@ -80,13 +85,17 @@ app.post('/api/view', (req, res) => {
 
 const baseUrl = req => (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
 app.get('/qr.png', async (req, res) => {
-  const buf = await QRCode.toBuffer(baseUrl(req) + '/', {
+  const table = str(req.query.table, 40).replace(/[^a-zA-Z0-9_-]/g, '');
+  const target = baseUrl(req) + '/' + (table ? '?table=' + encodeURIComponent(table) : '');
+  const buf = await QRCode.toBuffer(target, {
     width: Math.min(Math.max(+req.query.size || 1000, 200), 3000), margin: 2, errorCorrectionLevel: 'M' });
   if (req.query.download) res.set('Content-Disposition', 'attachment; filename="menu-qr.png"');
   res.type('png').send(buf);
 });
 app.get('/qr.svg', async (req, res) => {
-  const svg = await QRCode.toString(baseUrl(req) + '/', { type: 'svg', margin: 1, errorCorrectionLevel: 'M' });
+  const table = str(req.query.table, 40).replace(/[^a-zA-Z0-9_-]/g, '');
+  const target = baseUrl(req) + '/' + (table ? '?table=' + encodeURIComponent(table) : '');
+  const svg = await QRCode.toString(target, { type: 'svg', margin: 1, errorCorrectionLevel: 'M' });
   if (req.query.download) res.set('Content-Disposition', 'attachment; filename="menu-qr.svg"');
   res.type('image/svg+xml').send(svg);
 });
@@ -97,6 +106,19 @@ const A = express.Router();
 A.use((req, res, next) => (authed(req) ? next() : res.status(401).json({ error: 'Απαιτείται σύνδεση' })));
 
 A.get('/menu', (req, res) => res.json(getMenu(true)));
+A.post('/upload-image', express.raw({ type: 'application/octet-stream', limit: '8mb' }), (req, res) => {
+  const b = req.body;
+  if (!Buffer.isBuffer(b) || !b.length) return res.status(400).json({ error: 'Επιλέξτε φωτογραφία.' });
+  let ext = '';
+  if (b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) ext = '.jpg';
+  else if (b.length > 8 && b.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) ext = '.png';
+  else if (b.length > 12 && b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'WEBP') ext = '.webp';
+  if (!ext) return res.status(415).json({ error: 'Υποστηρίζονται μόνο JPG, PNG και WEBP.' });
+  const name = crypto.randomBytes(18).toString('hex') + ext;
+  fs.writeFileSync(path.join(UPLOAD_DIR, name), b, { flag: 'wx' });
+  res.json({ url: '/uploads/' + name });
+});
+
 A.get('/stats', (req, res) => res.json({
   rows: db.prepare("SELECT day,lang,n FROM views WHERE day>=date('now','-29 day') ORDER BY day").all(),
   total: db.prepare('SELECT COALESCE(SUM(n),0) n FROM views').get().n }));
@@ -130,8 +152,8 @@ A.post('/items', (req, res) => {
   const image = imageUrl(b.image_url);
   if (image === null) return res.status(400).json({ error: 'Η φωτογραφία πρέπει να έχει έγκυρο URL HTTP ή HTTPS.' });
   const sort = db.prepare('SELECT COALESCE(MAX(sort),0)+1 n FROM items WHERE category_id=?').get(b.category_id).n;
-  res.json({ id: db.prepare('INSERT INTO items(category_id,name,name_en,description,description_en,price,available,sort,allergens,allergens_en,image_url) VALUES(?,?,?,?,?,?,?,?,?,?,?)')
-    .run(b.category_id, name, str(b.name_en, 150), str(b.description, 400), str(b.description_en, 400), num(b.price), bool(b.available ?? 1), sort, str(b.allergens, 300), str(b.allergens_en, 300), image).lastInsertRowid });
+  res.json({ id: db.prepare('INSERT INTO items(category_id,name,name_en,description,description_en,price,available,sort,allergens,allergens_en,image_url,allergen_codes,popular) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(b.category_id, name, str(b.name_en, 150), str(b.description, 400), str(b.description_en, 400), num(b.price), bool(b.available ?? 1), sort, str(b.allergens, 300), str(b.allergens_en, 300), image, allergenCodes(b.allergen_codes), bool(b.popular ?? 0)).lastInsertRowid });
 });
 A.put('/items/:id', (req, res) => {
   const it = db.prepare('SELECT * FROM items WHERE id=?').get(req.params.id);
@@ -140,8 +162,8 @@ A.put('/items/:id', (req, res) => {
   if (!name) return res.status(400).json({ error: 'Δώστε όνομα πιάτου' });
   const image = imageUrl(b.image_url);
   if (image === null) return res.status(400).json({ error: 'Η φωτογραφία πρέπει να έχει έγκυρο URL HTTP ή HTTPS.' });
-  db.prepare('UPDATE items SET category_id=?,name=?,name_en=?,description=?,description_en=?,price=?,available=?,allergens=?,allergens_en=?,image_url=? WHERE id=?')
-    .run(b.category_id, name, str(b.name_en, 150), str(b.description, 400), str(b.description_en, 400), num(b.price), bool(b.available), str(b.allergens, 300), str(b.allergens_en, 300), image, it.id);
+  db.prepare('UPDATE items SET category_id=?,name=?,name_en=?,description=?,description_en=?,price=?,available=?,allergens=?,allergens_en=?,image_url=?,allergen_codes=?,popular=? WHERE id=?')
+    .run(b.category_id, name, str(b.name_en, 150), str(b.description, 400), str(b.description_en, 400), num(b.price), bool(b.available), str(b.allergens, 300), str(b.allergens_en, 300), image, allergenCodes(b.allergen_codes ?? it.allergen_codes), bool(b.popular ?? it.popular), it.id);
   res.json({ ok: true });
 });
 A.delete('/items/:id', (req, res) => { db.prepare('DELETE FROM items WHERE id=?').run(req.params.id); res.json({ ok: true }); });
@@ -185,6 +207,7 @@ app.use('/api/admin', A);
 const pub = path.join(__dirname, 'public');
 app.get('/admin', (req, res) => res.sendFile(path.join(pub, 'admin.html')));
 app.get('/print', (req, res) => res.sendFile(path.join(pub, 'print.html')));
+app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '30d', immutable: true }));
 app.use(express.static(pub, { index: 'index.html', maxAge: 0, setHeaders: (res, filePath) => { if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate'); } }));
 
 app.use((err, req, res, next) => { console.error(err); res.status(500).json({ error: 'Σφάλμα διακομιστή' }); });
