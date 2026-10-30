@@ -28,7 +28,7 @@ const applyInitialTranslations = db.transaction(() => {
 });
 applyInitialTranslations();
 
-const DEF = { name: 'Η Ταβέρνα μας', tagline: '', tagline_en: '', address: '', footer: '', footer_en: '', currency: '€' };
+const DEF = { name: 'Ψαροταβέρνα «Τα Μπαρμπούνια»', tagline: '', tagline_en: '', tagline_bg: '', tagline_tr: '', address: '', footer: '', footer_en: '', footer_bg: '', footer_tr: '', currency: '€' };
 const getSettings = () => {
   const s = { ...DEF };
   db.prepare('SELECT * FROM settings').all().forEach(r => (s[r.key] = r.value));
