@@ -164,6 +164,7 @@ dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::ba
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeImageUrl=s=>{try{const u=new URL(String(s||''));return ['http:','https:'].includes(u.protocol)?u.href:''}catch{return ''}};
 const money=p=>Number(p).toFixed(2).replace('.',',');
 const SF=[['name','Όνομα ταβέρνας'],['tagline','Υπότιτλος (Ελληνικά)'],['tagline_en','Υπότιτλος (English)'],['address','Διεύθυνση / περιοχή'],['footer','Κείμενο στο κάτω μέρος (Ελληνικά)'],['footer_en','Κείμενο στο κάτω μέρος (English)'],['currency','Νόμισμα']];
 let D=null,ST={rows:[],total:0},editId=null;
@@ -195,7 +196,7 @@ function prod(){
       <button class="ic" data-a="cup" title="Πάνω">↑</button><button class="ic" data-a="cdn" title="Κάτω">↓</button>
       <button data-a="cvis">${c.visible?'Απόκρυψη':'Εμφάνιση'}</button><button data-a="cren">Μετονομασία</button>
       <button class="dng" data-a="cdel">Διαγραφή</button><button class="pri" data-a="iadd">Νέο πιάτο</button></div>`+
-      its.map(i=>`<div class="it ${i.available?'':'off'}" data-i="${i.id}" draggable="true" title="Σύρε για αλλαγή σειράς">${i.image_url?`<img class="thumb" src="${esc(i.image_url)}" alt="" loading="lazy" onerror="this.remove()">`:''}<div class="t">${esc(i.name)}<small>${esc(i.name_en)}${i.description?' · '+esc(i.description):''}${i.allergens?' · Αλλεργιογόνα: '+esc(i.allergens):''}</small></div>
+      its.map(i=>`<div class="it ${i.available?'':'off'}" data-i="${i.id}" draggable="true" title="Σύρε για αλλαγή σειράς">${safeImageUrl(i.image_url)?`<img class="thumb" src="${esc(safeImageUrl(i.image_url))}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`:''}<div class="t">${esc(i.name)}<small>${esc(i.name_en)}${i.description?' · '+esc(i.description):''}${i.allergens?' · Αλλεργιογόνα: '+esc(i.allergens):''}</small></div>
         <span class="pr">${money(i.price)} ${esc(D.settings.currency)}</span>
         <button class="ic" data-a="iup">↑</button><button class="ic" data-a="idn">↓</button>
         <button data-a="iav">${i.available?'Εξαντλήθηκε':'Διαθέσιμο'}</button><button data-a="ied">Επεξεργασία</button><button class="dng" data-a="idel">Διαγραφή</button></div>`).join('')+'</div>'}).join('');
