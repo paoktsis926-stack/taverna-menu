@@ -7,7 +7,7 @@ const db = require('./db');
 const { seed } = require('./seed');
 
 const PORT = process.env.PORT || 3000;
-const DATA_DIR = path.dirname(process.env.DB_PATH || path.join(__dirname, 'data', 'menu.db'));
+const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.dirname(process.env.DB_PATH || path.join(__dirname, 'data', 'menu.db'));
 const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -85,7 +85,7 @@ app.post('/api/view', (req, res) => {
 
 const baseUrl = req => (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
 app.get('/qr.png', async (req, res) => {
-  const table = str(req.query.table, 40).replace(/[^a-zA-Z0-9_-]/g, '');
+  const table = str(req.query.table, 40).replace(/[^\\p{L}\\p{N}_ -]/gu, '');
   const target = baseUrl(req) + '/' + (table ? '?table=' + encodeURIComponent(table) : '');
   const buf = await QRCode.toBuffer(target, {
     width: Math.min(Math.max(+req.query.size || 1000, 200), 3000), margin: 2, errorCorrectionLevel: 'M' });
