@@ -27,5 +27,7 @@ addCol('items', 'name_en', "TEXT DEFAULT ''");
 addCol('items', 'description_en', "TEXT DEFAULT ''");
 addCol('items', 'allergens', "TEXT DEFAULT ''");
 addCol('items', 'allergens_en', "TEXT DEFAULT ''");
+// Safe, idempotent migration: preserves existing dish records and photo URLs.
+addCol('items', 'image_url', "TEXT DEFAULT ''");
 
 module.exports = db;
