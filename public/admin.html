@@ -87,7 +87,7 @@ dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::ba
       <h1>Καλώς ήρθατε</h1><p class="sub">Πίνακας διαχείρισης ψηφιακού μενού</p>
       <div class="stats" id="ds"></div>
       <div class="links">
-        <button data-go="prod">Διαχείριση προϊόντων</button><button data-go="tr">Μεταφράσεις EL/EN</button>
+        <button data-go="prod">Διαχείριση προϊόντων</button><button data-go="tr">Μεταφράσεις EL / EN / BG / TR</button>
         <button data-go="price">Μαζική αλλαγή τιμών</button><button data-go="print">PDF, QR και Table tents</button>
       </div>
     </section>
@@ -175,7 +175,7 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeImageUrl=s=>{try{const u=new URL(String(s||''));return ['http:','https:'].includes(u.protocol)?u.href:''}catch{return ''}};
 const money=p=>Number(p).toFixed(2).replace('.',',');
-const SF=[['name','Όνομα ταβέρνας'],['tagline','Υπότιτλος (Ελληνικά)'],['tagline_en','Υπότιτλος (English)'],['address','Διεύθυνση / περιοχή'],['footer','Κείμενο στο κάτω μέρος (Ελληνικά)'],['footer_en','Κείμενο στο κάτω μέρος (English)'],['currency','Νόμισμα']];
+const SF=[['name','Όνομα επιχείρησης'],['tagline','Υπότιτλος (Ελληνικά)'],['tagline_en','Υπότιτλος (English)'],['tagline_bg','Подзаглавие (Български)'],['tagline_tr','Alt başlık (Türkçe)'],['address','Διεύθυνση / περιοχή'],['footer','Κείμενο στο κάτω μέρος (Ελληνικά)'],['footer_en','Κείμενο στο κάτω μέρος (English)'],['footer_bg','Текст в долната част (Български)'],['footer_tr','Alt bilgi metni (Türkçe)'],['currency','Νόμισμα']];
 let D=null,ST={rows:[],total:0},editId=null;
 
 async function api(p,m='GET',b){
