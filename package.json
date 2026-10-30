@@ -3,8 +3,15 @@
   "version": "2.0.0",
   "private": true,
   "main": "server.js",
-  "scripts": { "start": "node server.js", "seed": "node seed.js" },
-  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js",
+    "check": "node --check server.js && node --check db.js && node --check seed.js",
+    "backup": "node scripts/backup-db.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "better-sqlite3": "^11.3.0",
     "express": "^4.21.0",
