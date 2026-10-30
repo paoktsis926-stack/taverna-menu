@@ -27,9 +27,10 @@ body{margin:0;color:var(--ink);font:10pt/1.35 Georgia,"Times New Roman",serif;ba
 <div class="bar"><button onclick="window.print()">Εκτύπωση / Αποθήκευση PDF</button><label class="print-filter" id="filter-wrap" hidden>Κατηγορίες <select id="print-categories" multiple aria-label="Επιλογή κατηγοριών για εκτύπωση" title="Κράτησε πατημένο Ctrl ή Command για πολλαπλή επιλογή"><option value="*" selected>Όλες οι κατηγορίες</option></select></label><a href="/print">Μενού</a><a href="/print?mode=qr">Κάρτα QR</a><a href="/print?mode=tents">Table tents</a><a href="/admin">Πίσω στη διαχείριση</a></div>
 <div class="sheet" id="r"></div>
 <script>
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));\nconst ALLERGENS={gluten:['Δημητριακά με γλουτένη','Cereals containing gluten'],crustaceans:['Καρκινοειδή','Crustaceans'],eggs:['Αυγά','Eggs'],fish:['Ψάρια','Fish'],peanuts:['Αραχίδες','Peanuts'],soybeans:['Σόγια','Soybeans'],milk:['Γάλα','Milk'],nuts:['Καρποί με κέλυφος','Tree nuts'],celery:['Σέλινο','Celery'],mustard:['Μουστάρδα','Mustard'],sesame:['Σησάμι','Sesame'],sulphites:['Διοξείδιο θείου / θειώδη','Sulphites'],lupin:['Λούπινο','Lupin'],molluscs:['Μαλάκια','Molluscs']};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ALLERGENS={gluten:['Δημητριακά με γλουτένη','Cereals containing gluten'],crustaceans:['Καρκινοειδή','Crustaceans'],eggs:['Αυγά','Eggs'],fish:['Ψάρια','Fish'],peanuts:['Αραχίδες','Peanuts'],soybeans:['Σόγια','Soybeans'],milk:['Γάλα','Milk'],nuts:['Καρποί με κέλυφος','Tree nuts'],celery:['Σέλινο','Celery'],mustard:['Μουστάρδα','Mustard'],sesame:['Σησάμι','Sesame'],sulphites:['Διοξείδιο θείου / θειώδη','Sulphites'],lupin:['Λούπινο','Lupin'],molluscs:['Μαλάκια','Molluscs']};
 const safeUrl=s=>{try{const u=new URL(String(s||''),location.origin);return ['http:','https:'].includes(u.protocol)?u.href:''}catch{return ''}};
-fetch('/api/menu').then(r=>{if(!r.ok)throw Error();return r.json()}).then(({settings:s,categories:cs})=>{
+fetch('/api/menu',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json()}).then(({settings:s,categories:cs})=>{
  document.title=s.name+' — Εκτύπωση';const mode=new URLSearchParams(location.search).get('mode');
  const scan='<p>Σκανάρετε για το μενού<br><i>Scan for the menu</i></p>';
  if(mode==='qr'){r.innerHTML='<div class="poster"><h1>'+esc(s.name)+'</h1><img src="/qr.svg" alt="QR code"><p>Σκανάρετε για το μενού<br><i>Scan for the menu</i></p></div>';return}
