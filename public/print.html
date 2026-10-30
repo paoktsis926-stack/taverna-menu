@@ -9,7 +9,7 @@
 body{margin:0;color:var(--ink);font:10pt/1.35 Georgia,"Times New Roman",serif;background:#eef0ed}
 .bar{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;padding:12px;background:var(--sea);font-family:system-ui,sans-serif}
 .bar button,.bar a{background:#fffefa;color:var(--sea);border:0;border-radius:9px;padding:9px 15px;font:600 14px system-ui;text-decoration:none;cursor:pointer}.print-filter{display:flex;align-items:center;gap:7px;color:#fff;font:600 12px system-ui}.print-filter select{max-width:220px;min-width:150px;min-height:38px;border:1px solid #ffffff55;border-radius:9px;padding:6px;background:#fffefa;color:var(--sea);font:13px system-ui}.cat.print-hidden{display:none!important}
-.sheet{background:#fffefa;max-width:210mm;margin:16px auto;padding:13mm;min-height:297mm;box-shadow:0 8px 32px #0001}
+.sheet{background:#fffefa;max-width:210mm;margin:16px auto;padding:13mm;min-height:297mm;box-shadow:0 8px 32px #0001;page-break-after:always;break-after:page}.sheet:last-child{page-break-after:auto;break-after:auto}
 .top{text-align:center;border-bottom:2pt solid var(--gold);padding-bottom:5mm;margin-bottom:6mm}
 .eyebrow{font:700 8pt system-ui,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#9a7841}
 .top h1{margin:2mm 0;font-size:30pt;color:var(--sea)}.top p{margin:1mm 0;color:#444}.top .ad{font:9pt system-ui,sans-serif;color:var(--muted);margin-top:2mm}
@@ -24,19 +24,21 @@ body{margin:0;color:var(--ink);font:10pt/1.35 Georgia,"Times New Roman",serif;ba
 </style>
 </head>
 <body>
-<div class="bar"><button onclick="window.print()">Εκτύπωση / Αποθήκευση PDF</button><label class="print-filter" id="filter-wrap" hidden>Κατηγορίες <select id="print-categories" multiple aria-label="Επιλογή κατηγοριών για εκτύπωση" title="Κράτησε πατημένο Ctrl ή Command για πολλαπλή επιλογή"><option value="*" selected>Όλες οι κατηγορίες</option></select></label><a href="/print">Μενού</a><a href="/print?mode=qr">Κάρτα QR</a><a href="/print?mode=tents">50 Table QR Cards</a><a href="/admin">Πίσω στη διαχείριση</a></div>
+<div class="bar"><button onclick="window.print()">Εκτύπωση / Αποθήκευση PDF</button><label class="print-filter">Γλώσσα PDF <select id="print-language" aria-label="Επιλογή γλώσσας PDF"><option value="el">Ελληνικά</option><option value="en">English</option><option value="bg">Български</option><option value="tr">Türkçe</option><option value="all">Και οι 4 γλώσσες</option></select></label><label class="print-filter" id="filter-wrap" hidden>Κατηγορίες <select id="print-categories" multiple aria-label="Επιλογή κατηγοριών για εκτύπωση" title="Κράτησε πατημένο Ctrl ή Command για πολλαπλή επιλογή"><option value="*" selected>Όλες οι κατηγορίες</option></select></label><a href="/print">Μενού</a><a href="/print?mode=qr">Κάρτα QR</a><a href="/print?mode=tents">50 Table QR Cards</a><a href="/admin">Πίσω στη διαχείριση</a></div>
 <div class="sheet" id="r"></div>
 <script>
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ALLERGENS={gluten:['Δημητριακά με γλουτένη','Cereals containing gluten','Зърнени култури с глутен','Gluten içeren tahıllar'],crustaceans:['Καρκινοειδή','Crustaceans','Ракообразни','Kabuklular'],eggs:['Αυγά','Eggs','Яйца','Yumurta'],fish:['Ψάρια','Fish','Риба','Balık'],peanuts:['Αραχίδες','Peanuts','Фъстъци','Yer fıstığı'],soybeans:['Σόγια','Soybeans','Соя','Soya'],milk:['Γάλα','Milk','Мляко','Süt'],nuts:['Καρποί με κέλυφος','Tree nuts','Ядки','Sert kabuklu yemişler'],celery:['Σέλινο','Celery','Целина','Kereviz'],mustard:['Μουστάρδα','Mustard','Горчица','Hardal'],sesame:['Σησάμι','Sesame','Сусам','Susam'],sulphites:['Διοξείδιο θείου / θειώδη','Sulphites','Сулфити','Sülfitler'],lupin:['Λούπινο','Lupin','Лупина','Acı bakla'],molluscs:['Μαλάκια','Molluscs','Мекотели','Yumuşakçalar']};
 const safeUrl=s=>{try{const u=new URL(String(s||''),location.origin);return ['http:','https:'].includes(u.protocol)?u.href:''}catch{return ''}};
-const LANGS={el:{scan:'Σκανάρετε για το μενού',menu:'Ψηφιακό μενού',allergens:'Αλλεργιογόνα'},en:{scan:'Scan for the menu',menu:'Digital menu',allergens:'Allergens'},bg:{scan:'Сканирайте за менюто',menu:'Дигитално меню',allergens:'Алергени'},tr:{scan:'Menüyü görüntülemek için tarayın',menu:'Dijital menü',allergens:'Alerjenler'}};
-const lang=new URLSearchParams(location.search).get('lang')||'el',L=LANGS[lang]||LANGS.el;
-const value=(obj,key)=>obj[key+'_'+lang]||obj[key+'_en']||obj[key]||'';
-
+const LANGS={el:{scan:'Σκανάρετε για το μενού',menu:'Ψηφιακό μενού',allergens:'Αλλεργιογόνα',footerLabel:'Πληροφορίες'},en:{scan:'Scan for the menu',menu:'Digital menu',allergens:'Allergens',footerLabel:'Information'},bg:{scan:'Сканирайте за менюто',menu:'Дигитално меню',allergens:'Алергени',footerLabel:'Информация'},tr:{scan:'Menüyü görüntülemek için tarayın',menu:'Dijital menü',allergens:'Alerjenler',footerLabel:'Bilgi'}};
+const params=new URLSearchParams(location.search),mode=params.get('mode');
+const requestedLang=params.get('lang')||'el';
+const validLang=['el','en','bg','tr','all'].includes(requestedLang)?requestedLang:'el';
+const languagePicker=document.querySelector('#print-language');
+if(languagePicker) languagePicker.value=validLang;
+const value=(obj,key,lang)=>lang==='el'?(obj[key]||''):(obj[key+'_'+lang]||obj[key+'_en']||obj[key]||'');
 fetch('/api/menu',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json()}).then(({settings:s,categories:cs})=>{
- document.title=s.name+' — Εκτύπωση';const mode=new URLSearchParams(location.search).get('mode');
- const scan='<p>'+L.scan+'</p>';
+ document.title=s.name+' — Εκτύπωση PDF';
  if(mode==='qr'){r.innerHTML='<div class="poster"><h1>'+esc(s.name)+'</h1><img src="/qr.svg" alt="QR code"><p>Σκανάρετε για το μενού<br><i>Scan for the menu</i></p></div>';return}
  if(mode==='tents'){
    const total=50,perPage=10,pages=Math.ceil(total/perPage);
@@ -50,23 +52,28 @@ fetch('/api/menu',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.j
    }).join('');
    r.innerHTML=sheets;document.title=s.name+' — 50 Foldable QR Table Tents';return
  }
+ const langs=validLang==='all'?['el','en','bg','tr']:[validLang];
  const price=p=>Number(p)>0?Number(p).toFixed(2).replace('.',',')+' '+esc(s.currency):'';
- r.innerHTML='<div class="top"><div class="eyebrow">'+esc(L.menu)+'</div><h1>'+esc(s.name)+'</h1><p>'+esc(value(s,'tagline'))+'</p><div class="ad">'+esc(s.address)+'</div></div><div class="cols">'+
- cs.map(c=>'<div class="cat"><h2>'+esc(value(c,'name'))+'</h2>'+
- c.items.map(i=>{let codes=[];try{codes=JSON.parse(i.allergen_codes||'[]')}catch{};const labels=codes.map(code=>ALLERGENS[code]?.[['el','en','bg','tr'].indexOf(lang)]).filter(Boolean);return '<div class="it '+(i.available?'':'off')+'>'+(safeUrl(i.image_url)?'<img class="foodphoto" src="'+esc(safeUrl(i.image_url))+'" alt="">':'')+'<div class="row"><b>'+esc(value(i,'name'))+'</b><span class="dots"></span><span class="pr">'+price(i.price)+'</span></div>'+(value(i,'description')?'<p class="ds">'+esc(value(i,'description'))+'</p>':'')+((labels.length||i['allergens_'+lang]||i.allergens)?'<div class="allergen">'+esc(L.allergens)+': '+labels.map(x=>'<span>'+esc(x)+'</span>').join(' ')+((i['allergens_'+lang]||i.allergens)?' '+esc(i['allergens_'+lang]||i.allergens):'')+'</div>':'')+'</div>'}).join('')+'</div>').join('')+
- '</div><div class="foot"><img src="/qr.svg" alt="QR code"><div><b>Ψηφιακό μενού / Digital menu</b><br>'+esc(s.footer)+'<br><i>'+esc(s.footer_en)+'</i></div></div>';
+ const menuHtml=(lang,position)=> {
+   const L=LANGS[lang];
+   const content=cs.map(c=>'<div class="cat"><h2>'+esc(value(c,'name',lang))+'</h2>'+
+     c.items.map(i=>{let codes=[];try{codes=JSON.parse(i.allergen_codes||'[]')}catch{};const labels=codes.map(code=>ALLERGENS[code]?.[['el','en','bg','tr'].indexOf(lang)]).filter(Boolean);const freeAllergens=value(i,'allergens',lang);return '<div class="it '+(i.available?'':'off')+'>'+(safeUrl(i.image_url)?'<img class="foodphoto" src="'+esc(safeUrl(i.image_url))+'" alt="">':'')+'<div class="row"><b>'+esc(value(i,'name',lang))+'</b><span class="dots"></span><span class="pr">'+price(i.price)+'</span></div>'+(value(i,'description',lang)?'<p class="ds">'+esc(value(i,'description',lang))+'</p>':'')+((labels.length||freeAllergens)?'<div class="allergen">'+esc(L.allergens)+': '+labels.map(x=>'<span>'+esc(x)+'</span>').join(' ')+(freeAllergens?' '+esc(freeAllergens):'')+'</div>':'')+'</div>'}).join('')+'</div>').join('');
+   const tagline=value(s,'tagline',lang),footer=value(s,'footer',lang);
+   return '<section class="sheet" data-language="'+lang+'"><div class="top"><div class="eyebrow">'+esc(L.menu)+'</div><h1>'+esc(s.name)+'</h1><p>'+esc(tagline)+'</p><div class="ad">'+esc(s.address)+'</div></div><div class="cols">'+content+'</div><div class="foot"><img src="/qr.svg" alt="QR code"><div><b>'+esc(L.menu)+'</b><br>'+esc(footer)+'</div></div></section>';
+ };
+ r.innerHTML=langs.map(menuHtml).join('');
  const picker=document.querySelector('#print-categories');
  if(picker){
-   picker.innerHTML='<option value="*" selected>Όλες οι κατηγορίες</option>'+cs.map((cat,index)=>'<option value="'+index+'">'+esc(cat.name)+'</option>').join('');
+   const labels=cs.map((cat,index)=>'<option value="'+index+'">'+esc(value(cat,'name','el'))+'</option>').join('');
+   picker.innerHTML='<option value="*" selected>Όλες οι κατηγορίες</option>'+labels;
    document.querySelector('#filter-wrap').hidden=false;
    picker.addEventListener('change',()=>{
-     const chosen=[...picker.selectedOptions].map(o=>o.value);
-     const all=chosen.includes('*')||!chosen.length;
-     [...document.querySelectorAll('.cols .cat')].forEach((el,index)=>el.classList.toggle('print-hidden',!all&&!chosen.includes(String(index))));
-     if(all)picker.value='*';
-     else [...picker.options].find(o=>o.value==='*').selected=false;
+     const chosen=[...picker.selectedOptions].map(o=>o.value),all=chosen.includes('*')||!chosen.length;
+     document.querySelectorAll('.cols').forEach(cols=>[...cols.querySelectorAll('.cat')].forEach((el,index)=>el.classList.toggle('print-hidden',!all&&!chosen.includes(String(index)))));
+     if(all)picker.value='*';else [...picker.options].find(o=>o.value==='*').selected=false;
    });
  }
 }).catch(()=>{r.innerHTML='<p>Δεν ήταν δυνατή η φόρτωση του μενού.</p>'});
+if(languagePicker) languagePicker.addEventListener('change',()=>{const next=new URL(location.href);if(languagePicker.value==='el')next.searchParams.delete('lang');else next.searchParams.set('lang',languagePicker.value);location.href=next.toString()});
 </script>
 </body></html>
