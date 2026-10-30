@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
 <title>Εκτύπωση μενού</title>
 <style>
-@page{size:A4;margin:13mm}*{box-sizing:border-box}
+@page{size:A4;margin:0}*{box-sizing:border-box}
 :root{--sea:#103c46;--gold:#d7ad63;--ink:#19353a;--muted:#657371}
 body{margin:0;color:var(--ink);font:10pt/1.35 Georgia,"Times New Roman",serif;background:#eef0ed}
 .bar{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;padding:12px;background:var(--sea);font-family:system-ui,sans-serif}
@@ -19,20 +19,24 @@ body{margin:0;color:var(--ink);font:10pt/1.35 Georgia,"Times New Roman",serif;ba
 .foodphoto{float:right;width:22mm;height:22mm;object-fit:cover;margin:0 0 2mm 3mm;border-radius:2mm;print-color-adjust:exact}.en{font-size:8pt;color:var(--muted);font-style:italic;margin:0}.ds{font-size:8pt;color:#555;margin:1mm 0 0} .allergen{font:7pt system-ui,sans-serif;color:#8a5d24;margin-top:1mm}.allergen span{display:inline-block;border:0.5pt solid #d9c69f;border-radius:2mm;padding:.4mm 1.2mm;margin:.3mm}
 .foot{display:flex;align-items:center;gap:5mm;margin-top:6mm;padding-top:3mm;border-top:1pt solid #ccc;font:8pt system-ui,sans-serif}.foot img{width:22mm;height:22mm}
 .poster{text-align:center;padding-top:22mm;font-family:system-ui,sans-serif}.poster h1{font:700 34pt Georgia,serif;color:var(--sea);margin:0 0 4mm}.poster img{width:115mm;height:115mm}.poster p{font-size:17pt;margin:4mm 0}.poster i{color:#666;font-size:12pt}
-.tent-sheet{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,1fr);gap:4mm;background:#fffefa;width:210mm;height:297mm;margin:12px auto;padding:10mm;page-break-after:always;break-after:page;box-shadow:0 8px 32px #0001}.tent{border:1px dashed #9b9b92;text-align:center;padding:3mm 2mm;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0;overflow:hidden}.tent h2{margin:0 0 1mm;font:700 13pt Georgia,serif;color:var(--sea)}.tent .table-no{font:800 10pt system-ui;color:#8a682f;letter-spacing:.12em;text-transform:uppercase;margin-bottom:1mm}.tent img{width:34mm;height:34mm;object-fit:contain}.tent p{margin:1mm 0 0;font-size:9pt}.tent i{color:#666;font-size:8pt}@media print{.tent-sheet{margin:0;box-shadow:none}}
+.tent-sheet{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,1fr);gap:4mm;background:#fffefa;width:210mm;height:297mm;margin:12px auto;padding:10mm;page-break-after:always;break-after:page;box-shadow:0 8px 32px #0001}.tent-sheet:last-child{page-break-after:auto;break-after:auto}.tent{border:1px dashed #9b9b92;text-align:center;padding:3mm 2mm;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0;overflow:hidden}.tent h2{margin:0 0 1mm;font:700 13pt Georgia,serif;color:var(--sea)}.tent .table-no{font:800 10pt system-ui;color:#8a682f;letter-spacing:.12em;text-transform:uppercase;margin-bottom:1mm}.tent img{width:34mm;height:34mm;object-fit:contain}.tent p{margin:1mm 0 0;font-size:9pt}.tent i{color:#666;font-size:8pt}@media print{.tent-sheet{margin:0;box-shadow:none}}
 @media print{body{background:#fff}.bar{display:none}.sheet{margin:0;padding:0;max-width:none;min-height:0;box-shadow:none}.cat.print-hidden{display:none!important}}
 </style>
 </head>
 <body>
-<div class="bar"><button onclick="window.print()">Εκτύπωση / Αποθήκευση PDF</button><label class="print-filter" id="filter-wrap" hidden>Κατηγορίες <select id="print-categories" multiple aria-label="Επιλογή κατηγοριών για εκτύπωση" title="Κράτησε πατημένο Ctrl ή Command για πολλαπλή επιλογή"><option value="*" selected>Όλες οι κατηγορίες</option></select></label><a href="/print">Μενού</a><a href="/print?mode=qr">Κάρτα QR</a><a href="/print?mode=tents">Table tents</a><a href="/admin">Πίσω στη διαχείριση</a></div>
+<div class="bar"><button onclick="window.print()">Εκτύπωση / Αποθήκευση PDF</button><label class="print-filter" id="filter-wrap" hidden>Κατηγορίες <select id="print-categories" multiple aria-label="Επιλογή κατηγοριών για εκτύπωση" title="Κράτησε πατημένο Ctrl ή Command για πολλαπλή επιλογή"><option value="*" selected>Όλες οι κατηγορίες</option></select></label><a href="/print">Μενού</a><a href="/print?mode=qr">Κάρτα QR</a><a href="/print?mode=tents">50 Table QR Cards</a><a href="/admin">Πίσω στη διαχείριση</a></div>
 <div class="sheet" id="r"></div>
 <script>
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ALLERGENS={gluten:['Δημητριακά με γλουτένη','Cereals containing gluten'],crustaceans:['Καρκινοειδή','Crustaceans'],eggs:['Αυγά','Eggs'],fish:['Ψάρια','Fish'],peanuts:['Αραχίδες','Peanuts'],soybeans:['Σόγια','Soybeans'],milk:['Γάλα','Milk'],nuts:['Καρποί με κέλυφος','Tree nuts'],celery:['Σέλινο','Celery'],mustard:['Μουστάρδα','Mustard'],sesame:['Σησάμι','Sesame'],sulphites:['Διοξείδιο θείου / θειώδη','Sulphites'],lupin:['Λούπινο','Lupin'],molluscs:['Μαλάκια','Molluscs']};
 const safeUrl=s=>{try{const u=new URL(String(s||''),location.origin);return ['http:','https:'].includes(u.protocol)?u.href:''}catch{return ''}};
+const LANGS={el:{scan:'Σκανάρετε για το μενού',menu:'Ψηφιακό μενού',allergens:'Αλλεργιογόνα'},en:{scan:'Scan for the menu',menu:'Digital menu',allergens:'Allergens'},bg:{scan:'Сканирайте за менюто',menu:'Дигитално меню',allergens:'Алергени'},tr:{scan:'Menüyü görüntülemek için tarayın',menu:'Dijital menü',allergens:'Alerjenler'}};
+const lang=new URLSearchParams(location.search).get('lang')||'el',L=LANGS[lang]||LANGS.el;
+const value=(obj,key)=>obj[key+'_'+lang]||obj[key+'_en']||obj[key]||'';
+
 fetch('/api/menu',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json()}).then(({settings:s,categories:cs})=>{
  document.title=s.name+' — Εκτύπωση';const mode=new URLSearchParams(location.search).get('mode');
- const scan='<p>Σκανάρετε για το μενού<br><i>Scan for the menu</i></p>';
+ const scan='<p>'+L.scan+'</p>';
  if(mode==='qr'){r.innerHTML='<div class="poster"><h1>'+esc(s.name)+'</h1><img src="/qr.svg" alt="QR code"><p>Σκανάρετε για το μενού<br><i>Scan for the menu</i></p></div>';return}
  if(mode==='tents'){
    const total=50,perPage=10,pages=Math.ceil(total/perPage);
@@ -47,9 +51,9 @@ fetch('/api/menu',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.j
    r.innerHTML=sheets;document.title=s.name+' — 50 Table QR Cards';return
  }
  const price=p=>Number(p)>0?Number(p).toFixed(2).replace('.',',')+' '+esc(s.currency):'';
- r.innerHTML='<div class="top"><div class="eyebrow">Ψηφιακός κατάλογος</div><h1>'+esc(s.name)+'</h1><p>'+esc(s.tagline)+'</p><p>'+esc(s.tagline_en)+'</p><div class="ad">'+esc(s.address)+'</div></div><div class="cols">'+
- cs.map(c=>'<div class="cat"><h2>'+esc(c.name)+(c.name_en?' <small style="font-weight:400;font-style:italic;color:#666">'+esc(c.name_en)+'</small>':'')+'</h2>'+
- c.items.map(i=>{let codes=[];try{codes=JSON.parse(i.allergen_codes||'[]')}catch{};const labels=codes.map(code=>ALLERGENS[code]?.[0]).filter(Boolean);return '<div class="it '+(i.available?'':'off')+'>'+(safeUrl(i.image_url)?'<img class="foodphoto" src="'+esc(safeUrl(i.image_url))+'" alt="">':'')+'<div class="row"><b>'+esc(i.name)+'</b><span class="dots"></span><span class="pr">'+price(i.price)+'</span></div>'+(i.name_en?'<p class="en">'+esc(i.name_en)+'</p>':'')+(i.description?'<p class="ds">'+esc(i.description)+'</p>':'')+(i.description_en?'<p class="ds">'+esc(i.description_en)+'</p>':'')+((labels.length||i.allergens)?'<div class="allergen">Αλλεργιογόνα: '+labels.map(x=>'<span>'+esc(x)+'</span>').join(' ')+(i.allergens?' '+esc(i.allergens):'')+'</div>':'')+(i.allergens_en?'<div class="allergen">Allergens: '+esc(i.allergens_en)+'</div>':'')+'</div>'}).join('')+'</div>').join('')+
+ r.innerHTML='<div class="top"><div class="eyebrow">'+esc(L.menu)+'</div><h1>'+esc(s.name)+'</h1><p>'+esc(value(s,'tagline'))+'</p><div class="ad">'+esc(s.address)+'</div></div><div class="cols">'+
+ cs.map(c=>'<div class="cat"><h2>'+esc(value(c,'name'))+'</h2>'+
+ c.items.map(i=>{let codes=[];try{codes=JSON.parse(i.allergen_codes||'[]')}catch{};const labels=codes.map(code=>ALLERGENS[code]?.[0]).filter(Boolean);return '<div class="it '+(i.available?'':'off')+'>'+(safeUrl(i.image_url)?'<img class="foodphoto" src="'+esc(safeUrl(i.image_url))+'" alt="">':'')+'<div class="row"><b>'+esc(value(i,'name'))+'</b><span class="dots"></span><span class="pr">'+price(i.price)+'</span></div>'+(value(i,'description')?'<p class="ds">'+esc(value(i,'description'))+'</p>':'')+((labels.length||i.allergens)?'<div class="allergen">Αλλεργιογόνα: '+labels.map(x=>'<span>'+esc(x)+'</span>').join(' ')+(i.allergens?' '+esc(i.allergens):'')+'</div>':'')+(i.allergens_en?'<div class="allergen">Allergens: '+esc(i['allergens_'+lang]||i.allergens_en||i.allergens)+'</div>':'')+'</div>'}).join('')+'</div>').join('')+
  '</div><div class="foot"><img src="/qr.svg" alt="QR code"><div><b>Ψηφιακό μενού / Digital menu</b><br>'+esc(s.footer)+'<br><i>'+esc(s.footer_en)+'</i></div></div>';
  const picker=document.querySelector('#print-categories');
  if(picker){
