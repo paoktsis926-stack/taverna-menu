@@ -23,10 +23,18 @@ const addCol = (t, c, d) => {
   if (!db.prepare(`PRAGMA table_info(${t})`).all().some(x => x.name === c)) db.exec(`ALTER TABLE ${t} ADD COLUMN ${c} ${d}`);
 };
 addCol('categories', 'name_en', "TEXT DEFAULT ''");
+addCol('categories', 'name_bg', "TEXT DEFAULT ''");
+addCol('categories', 'name_tr', "TEXT DEFAULT ''");
 addCol('items', 'name_en', "TEXT DEFAULT ''");
+addCol('items', 'name_bg', "TEXT DEFAULT ''");
+addCol('items', 'name_tr', "TEXT DEFAULT ''");
 addCol('items', 'description_en', "TEXT DEFAULT ''");
+addCol('items', 'description_bg', "TEXT DEFAULT ''");
+addCol('items', 'description_tr', "TEXT DEFAULT ''");
 addCol('items', 'allergens', "TEXT DEFAULT ''");
 addCol('items', 'allergens_en', "TEXT DEFAULT ''");
+addCol('items', 'allergens_bg', "TEXT DEFAULT ''");
+addCol('items', 'allergens_tr', "TEXT DEFAULT ''");
 // Safe, idempotent migrations: preserve all existing dish records and media URLs.
 addCol('items', 'image_url', "TEXT DEFAULT ''");
 addCol('items', 'allergen_codes', "TEXT DEFAULT '[]'");
