@@ -180,8 +180,8 @@ async function load(){D=await api('/admin/menu');ST=await api('/admin/stats');vi
 function renderAll(){head();dash();opts();prod();tr();settings();stats()}
 function head(){const n=D.settings.name;$('#bn').textContent=n;$('#logo').textContent=[...n][0]||'M';document.title='Διαχείριση – '+n}
 function views(days){const lim=new Date(Date.now()-(days-1)*864e5).toISOString().slice(0,10);return ST.rows.filter(r=>r.day>=lim).reduce((a,r)=>a+r.n,0)}
-function dash(){const it=all(),on=it.filter(i=>i.available).length;
-  $('#ds').innerHTML=[[it.length,'Σύνολο προϊόντων'],[on,'Ενεργά'],[it.length-on,'Εξαντλημένα'],[D.categories.length,'Κατηγορίες'],[views(7),'Επισκέψεις 7 ημερών']].map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('')}
+function dash(){const it=all(),on=it.filter(i=>i.available).length,photos=it.filter(i=>i.image_url).length;
+  $('#ds').innerHTML=[[it.length,'Σύνολο προϊόντων'],[on,'Ενεργά'],[it.length-on,'Εξαντλημένα'],[D.categories.length,'Κατηγορίες'],[photos,'Με φωτογραφία'],[views(7),'Επισκέψεις 7 ημερών']].map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('')}
 function opts(){const o=D.categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
   const v=$('#fc').value;$('#fc').innerHTML='<option value="">Όλες οι κατηγορίες</option>'+o;$('#fc').value=v;
   $('#pc').innerHTML='<option value="">Όλο το μενού</option>'+o}
