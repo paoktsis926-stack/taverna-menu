@@ -14,6 +14,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const SECRET = process.env.SESSION_SECRET || ADMIN_PASSWORD;
 if (!ADMIN_PASSWORD) { console.error('Λείπει η μεταβλητή ADMIN_PASSWORD'); process.exit(1); }
 if (seed(db, false)) console.log('Φορτώθηκε το αρχικό μενού από το menu-seed.txt');
+db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('name', 'Ψαροταβέρνα «Τα Μπαρμπούνια»');
 
 const DEF = { name: 'Η Ταβέρνα μας', tagline: '', tagline_en: '', address: '', footer: '', footer_en: '', currency: '€' };
 const getSettings = () => {
