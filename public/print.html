@@ -19,7 +19,7 @@ body{margin:0;color:var(--ink);font:10pt/1.35 Georgia,"Times New Roman",serif;ba
 .foodphoto{float:right;width:22mm;height:22mm;object-fit:cover;margin:0 0 2mm 3mm;border-radius:2mm;print-color-adjust:exact}.en{font-size:8pt;color:var(--muted);font-style:italic;margin:0}.ds{font-size:8pt;color:#555;margin:1mm 0 0} .allergen{font:7pt system-ui,sans-serif;color:#8a5d24;margin-top:1mm}.allergen span{display:inline-block;border:0.5pt solid #d9c69f;border-radius:2mm;padding:.4mm 1.2mm;margin:.3mm}
 .foot{display:flex;align-items:center;gap:5mm;margin-top:6mm;padding-top:3mm;border-top:1pt solid #ccc;font:8pt system-ui,sans-serif}.foot img{width:22mm;height:22mm}
 .poster{text-align:center;padding-top:22mm;font-family:system-ui,sans-serif}.poster h1{font:700 34pt Georgia,serif;color:var(--sea);margin:0 0 4mm}.poster img{width:115mm;height:115mm}.poster p{font-size:17pt;margin:4mm 0}.poster i{color:#666;font-size:12pt}
-.tent-sheet{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,1fr);gap:4mm;background:#fffefa;width:210mm;height:297mm;margin:12px auto;padding:10mm;page-break-after:always;break-after:page;box-shadow:0 8px 32px #0001}.tent-sheet:last-child{page-break-after:auto;break-after:auto}.tent{border:1px dashed #9b9b92;text-align:center;padding:3mm 2mm;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0;overflow:hidden}.tent h2{margin:0 0 1mm;font:700 13pt Georgia,serif;color:var(--sea)}.tent .table-no{font:800 10pt system-ui;color:#8a682f;letter-spacing:.12em;text-transform:uppercase;margin-bottom:1mm}.tent img{width:34mm;height:34mm;object-fit:contain}.tent p{margin:1mm 0 0;font-size:9pt}.tent i{color:#666;font-size:8pt}@media print{.tent-sheet{margin:0;box-shadow:none}}
+.tent-sheet{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,1fr);gap:2mm 3mm;background:#fffefa;width:210mm;height:297mm;margin:12px auto;padding:7mm;page-break-after:always;break-after:page;box-shadow:0 8px 32px #0001}.tent-sheet:last-child{page-break-after:auto;break-after:auto}.tent{height:50mm;border:1px dashed #9b9b92;text-align:center;padding:1mm 2mm;font-family:system-ui,sans-serif;display:grid;grid-template-rows:1fr 1fr;min-height:0;overflow:hidden}.tent-face{display:flex;align-items:center;justify-content:space-around;gap:2mm;min-height:0}.tent-face.back{transform:rotate(180deg);border-top:1px dashed #b7a98e}.tent-copy{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0}.tent h2{margin:0;font:700 9pt Georgia,serif;color:var(--sea);line-height:1.05}.tent .table-no{font:800 8pt system-ui;color:#8a682f;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5mm}.tent img{width:18mm;height:18mm;object-fit:contain}.tent p{margin:.5mm 0 0;font-size:7pt}.tent i{color:#666;font-size:6pt}@media print{.tent-sheet{margin:0;box-shadow:none}}
 @media print{body{background:#fff}.bar{display:none}.sheet{margin:0;padding:0;max-width:none;min-height:0;box-shadow:none}.cat.print-hidden{display:none!important}}
 </style>
 </head>
@@ -42,13 +42,13 @@ fetch('/api/menu',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.j
    const total=50,perPage=10,pages=Math.ceil(total/perPage);
    const sheets=Array.from({length:pages},(_,page)=>{
      const cards=Array.from({length:perPage},(_,slot)=>{
-       const table=page*perPage+slot+1;
-       const src='/qr.svg?table='+encodeURIComponent(String(table));
-       return '<div class="tent"><div class="table-no">ΤΡΑΠΕΖΙ / TABLE / МАСА / MASA '+String(table).padStart(2,'0')+'</div><h2>'+esc(s.name)+'</h2><img src="'+src+'" alt="QR τραπεζιού '+table+'"><p>Σκανάρετε για το μενού</p><i>Scan · Сканирайте · Tarayın</i></div>';
+       const table=page*perPage+slot+1,src='/qr.svg?table='+encodeURIComponent(String(table));
+       const face='<div class="tent-face"><img src="'+src+'" alt="QR τραπεζιού '+table+'"><div class="tent-copy"><div class="table-no">TABLE '+String(table).padStart(2,'0')+'</div><h2>'+esc(s.name)+'</h2><p>Scan for menu · Сканирайте · Menü için tarayın</p></div></div>';
+       return '<div class="tent">'+face+face.replace('class="tent-face"','class="tent-face back"')+'</div>';
      }).join('');
      return '<div class="tent-sheet">'+cards+'</div>';
    }).join('');
-   r.innerHTML=sheets;document.title=s.name+' — 50 Table QR Cards';return
+   r.innerHTML=sheets;document.title=s.name+' — 50 Foldable QR Table Tents';return
  }
  const price=p=>Number(p)>0?Number(p).toFixed(2).replace('.',',')+' '+esc(s.currency):'';
  r.innerHTML='<div class="top"><div class="eyebrow">'+esc(L.menu)+'</div><h1>'+esc(s.name)+'</h1><p>'+esc(value(s,'tagline'))+'</p><div class="ad">'+esc(s.address)+'</div></div><div class="cols">'+
