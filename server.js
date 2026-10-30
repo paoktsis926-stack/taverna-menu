@@ -80,7 +80,7 @@ app.post('/api/logout', (req, res) => { res.clearCookie('sid'); res.json({ ok: t
 // ---------- Δημόσιο ----------
 app.get('/api/menu', (req, res) => { res.set('Cache-Control', 'no-cache'); res.json(getMenu(false)); });
 app.post('/api/view', (req, res) => {
-  const lang = req.body.lang === 'en' ? 'en' : 'el';
+  const lang = ['el','en','bg','tr'].includes(req.body.lang) ? req.body.lang : 'el';
   db.prepare("INSERT INTO views(day,lang,n) VALUES(date('now'),?,1) ON CONFLICT(day,lang) DO UPDATE SET n=n+1").run(lang);
   res.json({ ok: true });
 });
@@ -135,14 +135,14 @@ A.post('/categories', (req, res) => {
   const name = str(req.body.name, 100);
   if (!name) return res.status(400).json({ error: 'Δώστε όνομα κατηγορίας' });
   const sort = db.prepare('SELECT COALESCE(MAX(sort),0)+1 n FROM categories').get().n;
-  res.json({ id: db.prepare('INSERT INTO categories(name,name_en,sort) VALUES(?,?,?)').run(name, str(req.body.name_en, 100), sort).lastInsertRowid });
+  res.json({ id: db.prepare('INSERT INTO categories(name,name_en,name_bg,name_tr,sort) VALUES(?,?,?,?,?)').run(name, str(req.body.name_en, 100), str(req.body.name_bg,100), str(req.body.name_tr,100), sort).lastInsertRowid });
 });
 A.put('/categories/:id', (req, res) => {
   const c = db.prepare('SELECT * FROM categories WHERE id=?').get(req.params.id);
   if (!c) return res.status(404).json({ error: 'Δεν βρέθηκε' });
   const b = { ...c, ...req.body }, name = str(b.name, 100);
   if (!name) return res.status(400).json({ error: 'Δώστε όνομα κατηγορίας' });
-  db.prepare('UPDATE categories SET name=?, name_en=?, visible=? WHERE id=?').run(name, str(b.name_en, 100), bool(b.visible), c.id);
+  db.prepare('UPDATE categories SET name=?, name_en=?, name_bg=?, name_tr=?, visible=? WHERE id=?').run(name, str(b.name_en, 100), str(b.name_bg,100), str(b.name_tr,100), bool(b.visible), c.id);
   res.json({ ok: true });
 });
 A.delete('/categories/:id', (req, res) => { db.prepare('DELETE FROM categories WHERE id=?').run(req.params.id); res.json({ ok: true }); });
@@ -154,8 +154,8 @@ A.post('/items', (req, res) => {
   const image = imageUrl(b.image_url);
   if (image === null) return res.status(400).json({ error: 'Η φωτογραφία πρέπει να έχει έγκυρο URL HTTP ή HTTPS.' });
   const sort = db.prepare('SELECT COALESCE(MAX(sort),0)+1 n FROM items WHERE category_id=?').get(b.category_id).n;
-  res.json({ id: db.prepare('INSERT INTO items(category_id,name,name_en,description,description_en,price,available,sort,allergens,allergens_en,image_url,allergen_codes,popular) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)')
-    .run(b.category_id, name, str(b.name_en, 150), str(b.description, 400), str(b.description_en, 400), num(b.price), bool(b.available ?? 1), sort, str(b.allergens, 300), str(b.allergens_en, 300), image, allergenCodes(b.allergen_codes), bool(b.popular ?? 0)).lastInsertRowid });
+  res.json({ id: db.prepare('INSERT INTO items(category_id,name,name_en,name_bg,name_tr,description,description_en,description_bg,description_tr,price,available,sort,allergens,allergens_en,allergens_bg,allergens_tr,image_url,allergen_codes,popular) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(b.category_id, name, str(b.name_en,150), str(b.name_bg,150), str(b.name_tr,150), str(b.description,400), str(b.description_en,400), str(b.description_bg,400), str(b.description_tr,400), num(b.price), bool(b.available ?? 1), sort, str(b.allergens,300), str(b.allergens_en,300), str(b.allergens_bg,300), str(b.allergens_tr,300), image, allergenCodes(b.allergen_codes), bool(b.popular ?? 0)).lastInsertRowid });
 });
 A.put('/items/:id', (req, res) => {
   const it = db.prepare('SELECT * FROM items WHERE id=?').get(req.params.id);
@@ -164,8 +164,8 @@ A.put('/items/:id', (req, res) => {
   if (!name) return res.status(400).json({ error: 'Δώστε όνομα πιάτου' });
   const image = imageUrl(b.image_url);
   if (image === null) return res.status(400).json({ error: 'Η φωτογραφία πρέπει να έχει έγκυρο URL HTTP ή HTTPS.' });
-  db.prepare('UPDATE items SET category_id=?,name=?,name_en=?,description=?,description_en=?,price=?,available=?,allergens=?,allergens_en=?,image_url=?,allergen_codes=?,popular=? WHERE id=?')
-    .run(b.category_id, name, str(b.name_en, 150), str(b.description, 400), str(b.description_en, 400), num(b.price), bool(b.available), str(b.allergens, 300), str(b.allergens_en, 300), image, allergenCodes(b.allergen_codes ?? it.allergen_codes), bool(b.popular ?? it.popular), it.id);
+  db.prepare('UPDATE items SET category_id=?,name=?,name_en=?,name_bg=?,name_tr=?,description=?,description_en=?,description_bg=?,description_tr=?,price=?,available=?,allergens=?,allergens_en=?,allergens_bg=?,allergens_tr=?,image_url=?,allergen_codes=?,popular=? WHERE id=?')
+    .run(b.category_id, name, str(b.name_en,150), str(b.name_bg,150), str(b.name_tr,150), str(b.description,400), str(b.description_en,400), str(b.description_bg,400), str(b.description_tr,400), num(b.price), bool(b.available), str(b.allergens,300), str(b.allergens_en,300), str(b.allergens_bg,300), str(b.allergens_tr,300), image, allergenCodes(b.allergen_codes ?? it.allergen_codes), bool(b.popular ?? it.popular), it.id);
   res.json({ ok: true });
 });
 A.delete('/items/:id', (req, res) => { db.prepare('DELETE FROM items WHERE id=?').run(req.params.id); res.json({ ok: true }); });
@@ -179,11 +179,15 @@ A.post('/reorder', (req, res) => {
 });
 
 A.put('/translations', (req, res) => {
-  const ui = db.prepare('UPDATE items SET name_en=?, description_en=? WHERE id=?');
-  const uc = db.prepare('UPDATE categories SET name_en=? WHERE id=?');
+  const langs = ['en','bg','tr'];
+  const uc = db.prepare('UPDATE categories SET name_en=?,name_bg=?,name_tr=? WHERE id=?');
+  const ui = db.prepare('UPDATE items SET name_en=?,name_bg=?,name_tr=?,description_en=?,description_bg=?,description_tr=?,allergens_en=?,allergens_bg=?,allergens_tr=? WHERE id=?');
   db.transaction(() => {
-    (req.body.categories || []).forEach(c => uc.run(str(c.name_en, 100), c.id));
-    (req.body.items || []).forEach(i => ui.run(str(i.name_en, 150), str(i.description_en, 400), i.id));
+    (req.body.categories || []).forEach(c => uc.run(...langs.map(l=>str(c['name_'+l],100)), c.id));
+    (req.body.items || []).forEach(i => ui.run(
+      ...langs.map(l=>str(i['name_'+l],150)),
+      ...langs.map(l=>str(i['description_'+l],400)),
+      ...langs.map(l=>str(i['allergens_'+l],300)), i.id));
   })();
   res.json({ ok: true });
 });
