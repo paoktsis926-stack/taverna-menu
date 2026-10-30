@@ -223,13 +223,13 @@ $('#cats').addEventListener('dragstart',e=>{
   dragRow=row;row.classList.add('dragging');
   e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',row.dataset.i||row.dataset.c);
 });
-$('#cats').addEventListener('dragend',()=>{$('#cats .dragging,#cats .drop-target').forEach(x=>x.classList.remove('dragging','drop-target'));dragRow=null});
+$('#cats').addEventListener('dragend',()=>{$$('#cats .dragging,#cats .drop-target').forEach(x=>x.classList.remove('dragging','drop-target'));dragRow=null});
 $('#cats').addEventListener('dragover',e=>{
   if(!dragRow)return;
   const target=e.target.closest('.cat[data-c],.it[data-i]');if(!target||target===dragRow)return;
   if(dragRow.classList.contains('it')!==target.classList.contains('it'))return;
   if(dragRow.classList.contains('it')&&dragRow.closest('.cat')!==target.closest('.cat'))return;
-  e.preventDefault();$('#cats .drop-target').forEach(x=>x.classList.remove('drop-target'));target.classList.add('drop-target');
+  e.preventDefault();$$('#cats .drop-target').forEach(x=>x.classList.remove('drop-target'));target.classList.add('drop-target');
 });
 $('#cats').addEventListener('drop',async e=>{
   if(!dragRow)return;
@@ -271,7 +271,7 @@ function openDlg(it,cid){
   editId=it?it.id:null;$('#dt').textContent=it?'Επεξεργασία πιάτου':'Νέο πιάτο';$('#de').textContent='';
   $('#d-cat').innerHTML=D.categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
   $('#d-name').value=it?it.name:'';$('#d-nameen').value=it?it.name_en:'';$('#d-desc').value=it?it.description:'';$('#d-descen').value=it?it.description_en:'';
-  $('#d-price').value=it?money(it.price):'';$('#d-cat').value=cid;$('#d-av').checked=it?!!it.available:true;$('#d-image').value=it?it.image_url||'':'';$('#d-image-file').value='';previewImage();$('#d-allergens').value=it?it.allergens||'':'';$('#d-allergensen').value=it?it.allergens_en||'':'';$('#d-popular').checked=it?!!it.popular:false;let codes=[];try{codes=JSON.parse(it?.allergen_codes||'[]')}catch{};$('#allergen-options input').forEach(x=>x.checked=codes.includes(x.value));
+  $('#d-price').value=it?money(it.price):'';$('#d-cat').value=cid;$('#d-av').checked=it?!!it.available:true;$('#d-image').value=it?it.image_url||'':'';$('#d-image-file').value='';previewImage();$('#d-allergens').value=it?it.allergens||'':'';$('#d-allergensen').value=it?it.allergens_en||'':'';$('#d-popular').checked=it?!!it.popular:false;let codes=[];try{codes=JSON.parse(it?.allergen_codes||'[]')}catch{};$$('#allergen-options input').forEach(x=>x.checked=codes.includes(x.value));
   $('#dlg').showModal();$('#d-name').focus()}
 function previewImage(){const src=$('#d-image').value.trim(),img=$('#d-image-preview');try{const u=new URL(src);if(!['http:','https:'].includes(u.protocol))throw Error();img.src=u.href;img.hidden=false}catch{img.removeAttribute('src');img.hidden=true}}
 $('#d-image').addEventListener('input',previewImage);
