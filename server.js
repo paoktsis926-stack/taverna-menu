@@ -54,6 +54,8 @@ const attempts = new Map();
 const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
+app.disable('etag');
+app.use('/api', (req, res, next) => { res.set({ 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate', 'Pragma': 'no-cache', 'Expires': '0' }); next(); });
 app.use(express.json({ limit: '1mb' }));
 app.use((req, res, next) => { res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'SAMEORIGIN', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'Permissions-Policy': 'camera=(), microphone=(), geolocation=()', 'Cross-Origin-Resource-Policy': 'same-origin' }); next(); });
 
