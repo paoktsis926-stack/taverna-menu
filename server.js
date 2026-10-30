@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const db = require('./db');
 const { seed } = require('./seed');
+const localized = require('./translations-bg-tr');
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.dirname(process.env.DB_PATH || path.join(__dirname, 'data', 'menu.db'));
@@ -15,6 +16,17 @@ const SECRET = process.env.SESSION_SECRET || ADMIN_PASSWORD;
 if (!ADMIN_PASSWORD) { console.error('Λείπει η μεταβλητή ADMIN_PASSWORD'); process.exit(1); }
 if (seed(db, false)) console.log('Φορτώθηκε το αρχικό μενού από το menu-seed.txt');
 db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('name', 'Ψαροταβέρνα «Τα Μπαρμπούνια»');
+const applyInitialTranslations = db.transaction(() => {
+  for (const c of db.prepare('SELECT id,name,name_bg,name_tr FROM categories').all()) {
+    const t = localized.categories[c.name];
+    if (t) db.prepare("UPDATE categories SET name_bg=CASE WHEN name_bg='' THEN ? ELSE name_bg END,name_tr=CASE WHEN name_tr='' THEN ? ELSE name_tr END WHERE id=?").run(t[0],t[1],c.id);
+  }
+  for (const i of db.prepare('SELECT id,name,name_bg,name_tr FROM items').all()) {
+    const t = localized.items[i.name];
+    if (t) db.prepare("UPDATE items SET name_bg=CASE WHEN name_bg='' THEN ? ELSE name_bg END,name_tr=CASE WHEN name_tr='' THEN ? ELSE name_tr END WHERE id=?").run(t[0],t[1],i.id);
+  }
+});
+applyInitialTranslations();
 
 const DEF = { name: 'Η Ταβέρνα μας', tagline: '', tagline_en: '', address: '', footer: '', footer_en: '', currency: '€' };
 const getSettings = () => {
