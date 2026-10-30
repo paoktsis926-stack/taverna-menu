@@ -17,6 +17,10 @@ try {
   let db = require('../db');
   const columns = db.prepare('PRAGMA table_info(items)').all().map(row => row.name);
   assert.ok(columns.includes('image_url'), 'image_url migration must be applied');
+  assert.ok(columns.includes('allergen_codes'), 'structured allergen migration must be applied');
+  assert.ok(columns.includes('popular'), 'popular dish migration must be applied');
+  assert.equal(db.prepare('SELECT allergen_codes FROM items WHERE id=?').get(itemId).allergen_codes, '[]', 'legacy dishes must default to no structured allergens');
+  assert.equal(db.prepare('SELECT popular FROM items WHERE id=?').get(itemId).popular, 0, 'legacy dishes must not become popular automatically');
   assert.equal(db.prepare('SELECT name FROM items WHERE id=?').get(itemId).name, 'Τζατζίκι', 'existing item must be preserved');
   db.prepare('UPDATE items SET image_url=? WHERE id=?').run('https://example.com/tzatziki.jpg', itemId);
   db.close();
@@ -24,6 +28,7 @@ try {
   delete require.cache[require.resolve('../db')];
   db = require('../db');
   assert.equal(db.prepare('SELECT image_url FROM items WHERE id=?').get(itemId).image_url, 'https://example.com/tzatziki.jpg', 'migration must be repeatable and preserve photo URLs');
+  assert.ok(db.prepare('PRAGMA table_info(items)').all().some(row => row.name === 'allergen_codes'), 'repeated migration must retain allergen_codes');
   db.close();
   console.log('SQLite migration test passed: legacy rows preserved, image_url added idempotently.');
 } finally {
