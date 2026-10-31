@@ -71,8 +71,22 @@ function draw(){
  }).join('')+'</div></section>').join('');
 }
 $('#q').addEventListener('input',draw);$('#available-only').addEventListener('change',draw);
-document.querySelectorAll('.lang button').forEach(b=>b.addEventListener('click',()=>{lang=b.dataset.l;try{localStorage.setItem('lang',lang)}catch(e){}draw()}));
-fetch('/api/menu',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(j=>{M=j;draw();try{if(!sessionStorage.getItem('v')){sessionStorage.setItem('v','1');fetch('/api/view',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lang})})}}catch(e){}}).catch(()=>{$('#m').innerHTML='<p class="msg">'+T[lang].err+'</p>'});
+function recordLanguageView(source=''){
+ try{
+  const key='menu_view_'+lang;
+  if(sessionStorage.getItem(key))return;
+  sessionStorage.setItem(key,'1');
+  const params=new URLSearchParams(location.search);
+  fetch('/api/view',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lang,source,table:params.get('table')||''})}).catch(()=>{});
+ }catch(e){}
+}
+document.querySelectorAll('.lang button').forEach(b=>b.addEventListener('click',()=>{lang=b.dataset.l;try{localStorage.setItem('lang',lang)}catch(e){}draw();recordLanguageView()}));
+$('#nav').addEventListener('click',e=>{
+ const link=e.target.closest('a[href^="#c"]');if(!link)return;
+ const category_id=Number(link.getAttribute('href').slice(2));
+ fetch('/api/analytics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind:'category_click',category_id,lang})}).catch(()=>{});
+});
+fetch('/api/menu',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(j=>{M=j;draw();recordLanguageView(new URLSearchParams(location.search).get('source')==='qr'?'qr':'')}).catch(()=>{$('#m').innerHTML='<p class="msg">'+T[lang].err+'</p>'});
 </script>
 </body>
 </html>
