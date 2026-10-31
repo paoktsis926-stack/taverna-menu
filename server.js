@@ -115,7 +115,7 @@ app.use('/api/menu', (req, res, next) => {
 });
 
 app.get('/health', (req, res) => res.json({ ok: true }));
-app.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ' + baseUrl(req) + '/sitemap.xml\n'));
+app.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /waiter\nDisallow: /kitchen\nDisallow: /api/\nSitemap: ' + baseUrl(req) + '/sitemap.xml\n'));
 app.get('/sitemap.xml', (req, res) => { const url = (baseUrl(req) + '/').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); res.type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>' + url + '</loc></url></urlset>'); });
 
 app.post('/api/login', (req, res) => {
@@ -286,6 +286,11 @@ app.use('/api/admin', A);
 
 // ---------- Σελίδες ----------
 const pub = path.join(__dirname, 'public');
+// ---------- Παραγγελίες (σερβιτόροι → κουζίνα) ----------
+require('./orders').mountOrders(app, db, {
+  sign, getCookie, safeEq, attempts, adminAuthed: authed, path, pub,
+  adminPassword: ADMIN_PASSWORD, staffPassword: process.env.STAFF_PASSWORD || '',
+});
 app.get('/admin', (req, res) => res.sendFile(path.join(pub, 'admin.html')));
 app.get('/print', (req, res) => res.sendFile(path.join(pub, 'print.html')));
 app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '30d', immutable: true }));

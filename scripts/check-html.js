@@ -1,7 +1,7 @@
 'use strict';
 const fs = require('fs');
 const vm = require('vm');
-const files = ['public/index.html', 'public/admin.html', 'public/print.html'];
+const files = ['public/index.html', 'public/admin.html', 'public/print.html', 'public/waiter.html', 'public/kitchen.html'];
 let checked = 0;
 for (const file of files) {
   const html = fs.readFileSync(file, 'utf8');

@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Παραγγελίες — Σερβιτόρος</title>
+<style>
+:root{--sea:#103c46;--sea2:#1d5a68;--cream:#fbf8f0;--card:#fff;--line:#e4dccb;--gold:#c8962d;--ok:#1c7c4b;--warn:#b45309;--bad:#b42318;--ink:#1d2b2f}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+header{position:sticky;top:0;z-index:5;background:var(--sea);color:#fff;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 0}
+header h1{margin:0 0 8px;font-size:17px;display:flex;justify-content:space-between;align-items:center}
+header h1 button{background:none;border:0;color:#cfe3e0;font-size:13px;padding:4px}
+.tabs{display:flex;gap:4px}.tabs button{flex:1;border:0;background:transparent;color:#cfe3e0;padding:10px 6px;font:600 15px system-ui;border-bottom:3px solid transparent}
+.tabs button.on{color:#fff;border-color:var(--gold)}
+.badge{display:inline-block;min-width:20px;padding:1px 6px;border-radius:99px;background:var(--gold);color:#fff;font-size:12px;margin-left:4px}
+.badge.ready{background:var(--ok)}
+main{padding:12px 14px}
+.row{display:flex;gap:8px;align-items:center}
+input,textarea{width:100%;font:16px system-ui;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+input:focus,textarea:focus{outline:none;border-color:var(--sea2)}
+.table-in{font-weight:700;font-size:20px;text-align:center}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:8px 14px;font:600 14px system-ui;color:var(--sea)}
+.chip.on{background:var(--sea);color:#fff;border-color:var(--sea)}
+.cat-h{margin:14px 0 6px;font:700 13px system-ui;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+.it{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px}
+.it .nm{flex:1;font-weight:600}
+.it.off{opacity:.45}.it.off .nm::after{content:" · εξαντλήθηκε";font-weight:400;color:var(--bad);font-size:13px}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:42px;height:42px;border-radius:12px;border:0;font:700 22px system-ui;background:var(--sea);color:#fff}
+.step button.minus{background:#e9e2d2;color:var(--sea)}
+.step b{min-width:26px;text-align:center;font-size:18px}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--cream) 30%)}
+.bar button{width:100%;border:0;border-radius:14px;padding:16px;font:700 17px system-ui;background:var(--gold);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.bar button:disabled{background:#c9c2b0;box-shadow:none}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20;display:none}
+.sheet-bg.on{display:block}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:92%;overflow:auto;background:var(--cream);border-radius:20px 20px 0 0;padding:16px 14px calc(16px + env(safe-area-inset-bottom,0px))}
+.sheet h2{margin:0 0 10px;font-size:19px}
+.line{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px}
+.line .top{display:flex;align-items:center;gap:10px}.line .top .nm{flex:1;font-weight:600}
+.line input{margin-top:8px;padding:9px 11px;font-size:15px}
+.btn{border:0;border-radius:14px;padding:15px;font:700 16px system-ui;width:100%}
+.btn.pri{background:var(--ok);color:#fff}.btn.sec{background:#e9e2d2;color:var(--sea);margin-top:8px}
+.err{color:var(--bad);font-weight:600;margin:8px 0;min-height:1.2em}
+.ord{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:12px;margin-bottom:12px}
+.ord.ready{border-color:var(--ok);background:#eefaf3;box-shadow:0 0 0 3px rgba(28,124,75,.15)}
+.ord .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ord .tb{font:800 24px system-ui;color:var(--sea)}
+.st{font:700 12px system-ui;padding:4px 10px;border-radius:99px;background:#eee;white-space:nowrap}
+.st.new{background:#fde8c8;color:#7a4300}.st.preparing{background:#dbeafe;color:#1e40af}.st.ready{background:var(--ok);color:#fff}
+.ord ul{margin:8px 0;padding-left:0;list-style:none}.ord li{padding:3px 0;border-bottom:1px dashed var(--line)}
+.ord li:last-child{border:0}.ord li i{display:block;color:var(--warn);font-size:14px}
+.meta{color:#6b7b80;font-size:13px}
+.empty{text-align:center;color:#6b7b80;padding:40px 10px}
+.toast{position:fixed;left:14px;right:14px;top:calc(70px + env(safe-area-inset-top,0px));z-index:50;background:var(--sea);color:#fff;border-radius:14px;padding:14px;font-weight:700;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.3);display:none}
+.toast.ready{background:var(--ok)}.toast.bad{background:var(--bad)}
+.login{position:fixed;inset:0;background:var(--sea);z-index:60;display:none;align-items:center;justify-content:center;padding:20px}
+.login.on{display:flex}
+.login form,.login .box{width:100%;max-width:340px;background:#fff;border-radius:18px;padding:20px}
+.login h2{margin:0 0 12px;color:var(--sea)}
+.login input{margin-bottom:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1><span>Παραγγελίες · Σερβιτόρος</span><button id="out" type="button">Έξοδος</button></h1>
+  <div class="tabs"><button id="tNew" class="on" type="button">Νέα παραγγελία</button><button id="tAct" type="button">Ενεργές <span id="nAct" class="badge" hidden></span></button></div>
+</header>
+<main>
+  <section id="vNew">
+    <input id="table" class="table-in" placeholder="Τραπέζι (π.χ. 7)" maxlength="20" autocomplete="off">
+    <div class="row" style="margin-top:8px"><input id="q" type="search" placeholder="Αναζήτηση πιάτου…" autocomplete="off"></div>
+    <div class="chips" id="chips"></div>
+    <div id="menu"></div>
+  </section>
+  <section id="vAct" hidden><div id="orders"></div></section>
+</main>
+<div class="bar" id="bar"><button id="review" type="button" disabled>Προσθέστε πιάτα</button></div>
+
+<div class="sheet-bg" id="bg"><div class="sheet">
+  <h2>Τραπέζι <span id="shTable"></span></h2>
+  <div id="lines"></div>
+  <textarea id="onote" rows="2" maxlength="200" placeholder="Σχόλιο για όλη την παραγγελία (προαιρετικό)"></textarea>
+  <div class="err" id="serr"></div>
+  <button class="btn pri" id="send" type="button">Αποστολή στην κουζίνα</button>
+  <button class="btn sec" id="back" type="button">Πίσω στον κατάλογο</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
+<div class="login" id="login"><form id="lf">
+  <h2>Σύνδεση προσωπικού</h2>
+  <input id="lname" placeholder="Το όνομά σας (π.χ. Μαρία)" maxlength="30" autocomplete="off">
+  <input id="lpw" type="password" placeholder="Κωδικός" autocomplete="current-password">
+  <div class="err" id="lerr"></div>
+  <button class="btn pri" type="submit">Είσοδος</button>
+</form></div>
+
+<script>
+(function(){
+var $=function(s){return document.querySelector(s)};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var ST={new:'Στάλθηκε',preparing:'Ετοιμάζεται',ready:'ΕΤΟΙΜΗ',served:'Σερβιρίστηκε',cancelled:'Ακυρώθηκε'};
+var cats=[],cart={},curCat='all',query='',tab='new',orders=[],seenReady=null,pollT=null,clientId=null;
+var store={get:function(k){try{return localStorage.getItem(k)||''}catch(e){return ''}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+var waiter=store.get('waiterName');
+
+function api(url,opt){
+  opt=opt||{};opt.headers={'Content-Type':'application/json'};opt.credentials='same-origin';
+  return fetch(url,opt).then(function(r){
+    if(r.status===401){showLogin();throw new Error('auth')}
+    return r.json().catch(function(){return{}}).then(function(d){if(!r.ok)throw new Error(d.error||'Σφάλμα');return d});
+  });
+}
+function toast(msg,kind){var t=$('#toast');t.textContent=msg;t.className='toast '+(kind||'');t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){t.style.display='none'},kind==='ready'?6000:3000)}
+function beep(){try{var C=window.AudioContext||window.webkitAudioContext,c=new C(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.setValueAtTime(.2,c.currentTime);o.start();o.stop(c.currentTime+.25)}catch(e){}if(navigator.vibrate)navigator.vibrate([200,100,200])}
+
+/* ---------- login ---------- */
+function showLogin(){$('#login').classList.add('on');$('#lname').value=waiter;clearInterval(pollT)}
+$('#lf').addEventListener('submit',function(e){
+  e.preventDefault();$('#lerr').textContent='';
+  var nm=$('#lname').value.trim();
+  fetch('/api/staff/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({password:$('#lpw').value})})
+  .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Σφάλμα');return d})})
+  .then(function(){waiter=nm;store.set('waiterName',nm);$('#lpw').value='';$('#login').classList.remove('on');start()})
+  .catch(function(er){$('#lerr').textContent=er.message});
+});
+$('#out').addEventListener('click',function(){fetch('/api/staff/logout',{method:'POST',credentials:'same-origin'}).then(showLogin)});
+
+/* ---------- κατάλογος ---------- */
+function loadMenu(){
+  return fetch('/api/menu',{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){cats=d.categories||[];drawChips();drawMenu()});
+}
+function drawChips(){
+  var h='<button class="chip'+(curCat==='all'?' on':'')+'" data-c="all" type="button">Όλα</button>';
+  cats.forEach(function(c){h+='<button class="chip'+(curCat===String(c.id)?' on':'')+'" data-c="'+c.id+'" type="button">'+esc(c.name)+'</button>'});
+  $('#chips').innerHTML=h;
+}
+$('#chips').addEventListener('click',function(e){var b=e.target.closest('.chip');if(!b)return;curCat=b.dataset.c;drawChips();drawMenu()});
+$('#q').addEventListener('input',function(){query=this.value.trim().toLowerCase();drawMenu()});
+function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
+function drawMenu(){
+  var h='',q=norm(query);
+  cats.forEach(function(c){
+    if(curCat!=='all'&&String(c.id)!==curCat)return;
+    var its=c.items.filter(function(i){return !q||norm(i.name).indexOf(q)>-1});
+    if(!its.length)return;
+    h+='<div class="cat-h">'+esc(c.name)+'</div>';
+    its.forEach(function(i){
+      var n=cart[i.id]?cart[i.id].qty:0,off=!i.available;
+      h+='<div class="it'+(off?' off':'')+'" data-id="'+i.id+'"><div class="nm">'+esc(i.name)+'</div>'+
+        (off?'':'<div class="step">'+(n?'<button class="minus" data-a="-" type="button">−</button><b>'+n+'</b>':'')+'<button data-a="+" type="button">+</button></div>')+'</div>';
+    });
+  });
+  $('#menu').innerHTML=h||'<div class="empty">Δεν βρέθηκε πιάτο.</div>';
+  drawBar();
+}
+function findItem(id){for(var i=0;i<cats.length;i++)for(var j=0;j<cats[i].items.length;j++)if(cats[i].items[j].id===id)return cats[i].items[j];return null}
+$('#menu').addEventListener('click',function(e){
+  var b=e.target.closest('button[data-a]');if(!b)return;
+  var id=Number(b.closest('.it').dataset.id),it=findItem(id);if(!it)return;
+  if(b.dataset.a==='+'){cart[id]=cart[id]||{qty:0,note:''};cart[id].qty=Math.min(50,cart[id].qty+1)}
+  else if(cart[id]){cart[id].qty--;if(cart[id].qty<1)delete cart[id]}
+  if(navigator.vibrate)navigator.vibrate(10);
+  drawMenu();
+});
+function cartCount(){var n=0;for(var k in cart)n+=cart[k].qty;return n}
+function drawBar(){
+  var n=cartCount(),b=$('#review');
+  $('#bar').style.display=tab==='new'?'':'none';
+  b.disabled=!n;b.textContent=n?('Έλεγχος & αποστολή · '+n+(n===1?' πιάτο':' πιάτα')):'Προσθέστε πιάτα';
+}
+
+/* ---------- έλεγχος & αποστολή ---------- */
+function drawLines(){
+  var h='';
+  Object.keys(cart).forEach(function(id){
+    var it=findItem(Number(id));if(!it)return;
+    h+='<div class="line" data-id="'+id+'"><div class="top"><div class="nm">'+esc(it.name)+'</div><div class="step"><button class="minus" data-a="-" type="button">−</button><b>'+cart[id].qty+'</b><button data-a="+" type="button">+</button></div></div>'+
+      '<input data-n="1" maxlength="120" placeholder="Σχόλιο (π.χ. χωρίς σκόρδο)" value="'+esc(cart[id].note)+'"></div>';
+  });
+  $('#lines').innerHTML=h;
+}
+$('#review').addEventListener('click',function(){
+  var t=$('#table').value.trim();
+  if(!t){$('#table').focus();toast('Γράψτε πρώτα το τραπέζι','bad');window.scrollTo(0,0);return}
+  $('#shTable').textContent=t;$('#serr').textContent='';drawLines();$('#bg').classList.add('on');
+});
+$('#back').addEventListener('click',function(){$('#bg').classList.remove('on')});
+$('#lines').addEventListener('click',function(e){
+  var b=e.target.closest('button[data-a]');if(!b)return;
+  var id=b.closest('.line').dataset.id;
+  if(b.dataset.a==='+')cart[id].qty=Math.min(50,cart[id].qty+1);else{cart[id].qty--;if(cart[id].qty<1)delete cart[id]}
+  if(!cartCount()){$('#bg').classList.remove('on')}else drawLines();
+  drawMenu();
+});
+$('#lines').addEventListener('input',function(e){
+  if(!e.target.dataset.n)return;var id=e.target.closest('.line').dataset.id;if(cart[id])cart[id].note=e.target.value;
+});
+function uid(){return(window.crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now())+'-'+Math.random().toString(16).slice(2)}
+$('#send').addEventListener('click',function(){
+  var btn=this,items=Object.keys(cart).map(function(id){return{id:Number(id),qty:cart[id].qty,note:cart[id].note}});
+  if(!items.length)return;
+  clientId=clientId||uid(); // ίδιο id σε επαναλήψεις → δεν διπλογράφεται
+  btn.disabled=true;btn.textContent='Αποστολή…';$('#serr').textContent='';
+  api('/api/staff/orders',{method:'POST',body:JSON.stringify({table:$('#table').value.trim(),items:items,note:$('#onote').value,waiter:waiter,clientId:clientId})})
+  .then(function(){
+    cart={};clientId=null;$('#table').value='';$('#onote').value='';$('#bg').classList.remove('on');
+    toast('✓ Στάλθηκε στην κουζίνα','');setTab('act');drawMenu();poll();
+  })
+  .catch(function(er){if(er.message!=='auth')$('#serr').textContent=er.message==='Failed to fetch'?'Δεν υπάρχει σύνδεση. Δοκιμάστε ξανά.':er.message})
+  .then(function(){btn.disabled=false;btn.textContent='Αποστολή στην κουζίνα'});
+});
+
+/* ---------- ενεργές παραγγελίες ---------- */
+function mins(t){return Math.max(0,Math.round((Date.now()-t)/60000))}
+function drawOrders(){
+  var h='';
+  orders.slice().sort(function(a,b){return(a.status==='ready'?0:1)-(b.status==='ready'?0:1)||a.created_at-b.created_at}).forEach(function(o){
+    h+='<div class="ord'+(o.status==='ready'?' ready':'')+'" data-id="'+o.id+'"><div class="hd"><span class="tb">Τραπέζι '+esc(o.table_label)+'</span><span class="st '+o.status+'">'+ST[o.status]+'</span></div>'+
+      '<div class="meta">πριν '+mins(o.created_at)+'′'+(o.waiter?' · '+esc(o.waiter):'')+'</div><ul>';
+    o.items.forEach(function(l){h+='<li><b>'+l.qty+'×</b> '+esc(l.name)+(l.note?'<i>'+esc(l.note)+'</i>':'')+'</li>'});
+    h+='</ul>'+(o.note?'<div class="meta"><b>Σχόλιο:</b> '+esc(o.note)+'</div>':'');
+    if(o.status==='ready')h+='<button class="btn pri" data-s="served" type="button" style="margin-top:8px">Σερβιρίστηκε ✓</button>';
+    else h+='<button class="btn sec" data-s="cancelled" type="button" style="padding:10px;font-size:14px">Ακύρωση παραγγελίας</button>';
+    h+='</div>';
+  });
+  $('#orders').innerHTML=h||'<div class="empty">Δεν υπάρχουν ενεργές παραγγελίες.</div>';
+  var nr=orders.filter(function(o){return o.status==='ready'}).length,n=$('#nAct');
+  n.hidden=!orders.length;n.textContent=orders.length;n.className='badge'+(nr?' ready':'');
+}
+$('#orders').addEventListener('click',function(e){
+  var b=e.target.closest('button[data-s]');if(!b)return;
+  var id=b.closest('.ord').dataset.id;
+  if(b.dataset.s==='cancelled'&&!confirm('Να ακυρωθεί η παραγγελία;'))return;
+  api('/api/staff/orders/'+id,{method:'PATCH',body:JSON.stringify({status:b.dataset.s})}).then(poll).catch(function(er){if(er.message!=='auth')toast(er.message,'bad')});
+});
+function poll(){
+  return api('/api/staff/orders').then(function(d){
+    orders=d.orders;
+    var ready={};orders.forEach(function(o){if(o.status==='ready')ready[o.id]=o});
+    if(seenReady){Object.keys(ready).forEach(function(id){if(!seenReady[id]){beep();toast('Τραπέζι '+ready[id].table_label+' — ΕΤΟΙΜΗ!','ready')}})}
+    seenReady=ready;drawOrders();
+  }).catch(function(){});
+}
+function setTab(t){
+  tab=t;$('#vNew').hidden=t!=='new';$('#vAct').hidden=t!=='act';
+  $('#tNew').classList.toggle('on',t==='new');$('#tAct').classList.toggle('on',t==='act');drawBar();
+}
+$('#tNew').addEventListener('click',function(){setTab('new')});
+$('#tAct').addEventListener('click',function(){setTab('act');poll()});
+
+function start(){
+  loadMenu().catch(function(){toast('Δεν φορτώθηκε ο κατάλογος','bad')});
+  poll();clearInterval(pollT);pollT=setInterval(function(){if(!document.hidden)poll()},5000);
+}
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&$('#login').className.indexOf('on')<0){poll();loadMenu().catch(function(){})}});
+api('/api/staff/me').then(start).catch(function(){});
+})();
+</script>
+</body>
+</html>

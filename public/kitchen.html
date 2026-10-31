@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Κουζίνα — Παραγγελίες</title>
+<style>
+:root{--bg:#0f1b1f;--card:#18282d;--line:#2b4249;--ink:#f1f5f4;--mut:#9fb4b8;--gold:#e0a93b;--ok:#2fb574;--warn:#f59e0b;--bad:#ef4444;--blue:#4c8dff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:#0a1417;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px}
+header h1{margin:0;font-size:20px;flex:1}
+.pill{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:6px 14px;font-weight:700;font-size:15px}
+.pill b{color:var(--gold)}
+header button{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:9px 14px;font:600 14px system-ui}
+header button.on{background:var(--ok);border-color:var(--ok);color:#04150c}
+main{padding:14px 16px calc(24px + env(safe-area-inset-bottom,0px))}
+h2{margin:18px 0 10px;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column}
+.card.late{border-color:var(--warn)}.card.vlate{border-color:var(--bad);animation:pulse 1.6s infinite}
+.card.preparing{border-left:8px solid var(--blue)}.card.new{border-left:8px solid var(--gold)}
+.card.fresh{animation:flash 1.2s 3}
+@keyframes flash{50%{background:#33481d}}
+@keyframes pulse{50%{box-shadow:0 0 0 5px rgba(239,68,68,.25)}}
+.hd{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.tb{font:800 34px system-ui}.tm{font:700 20px system-ui;color:var(--mut)}
+.late .tm{color:var(--warn)}.vlate .tm{color:var(--bad)}
+.who{color:var(--mut);font-size:14px;margin-bottom:6px}
+.card ul{list-style:none;margin:6px 0 10px;padding:0;flex:1}
+.card li{font-size:21px;font-weight:600;padding:6px 0;border-bottom:1px dashed var(--line)}
+.card li:last-child{border:0}
+.card li b{color:var(--gold);margin-right:4px}
+.card li i{display:block;font-size:17px;font-weight:700;color:#ffd166;background:rgba(255,209,102,.1);border-radius:8px;padding:3px 8px;margin-top:3px;font-style:normal}
+.onote{background:rgba(239,68,68,.15);border:1px solid var(--bad);border-radius:10px;padding:7px 10px;font-weight:700;margin-bottom:10px}
+.acts{display:flex;gap:8px}
+.acts button{flex:1;border:0;border-radius:14px;padding:16px 8px;font:800 18px system-ui;color:#04150c}
+.b-start{background:var(--blue);color:#fff!important}.b-ready{background:var(--ok)}.b-undo{flex:0 0 56px!important;background:#2b4249;color:var(--ink)!important}
+.b-x{flex:0 0 56px!important;background:transparent;color:var(--bad)!important;border:1px solid var(--bad)!important}
+.mini{background:var(--card);border:1px solid var(--ok);border-radius:14px;padding:10px 14px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.mini .t{font:800 22px system-ui}.mini .s{color:var(--mut);font-size:14px}
+.mini button{background:#2b4249;color:var(--ink);border:0;border-radius:10px;padding:8px 12px;font:600 13px system-ui}
+.empty{text-align:center;color:var(--mut);padding:60px 10px;font-size:20px}
+.login{position:fixed;inset:0;background:#0a1417;z-index:60;display:none;align-items:center;justify-content:center;padding:20px}
+.login.on{display:flex}
+.login form{width:100%;max-width:340px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px}
+.login h2{margin:0 0 12px;color:var(--ink);text-transform:none;letter-spacing:0;font-size:20px}
+.login input{width:100%;font:17px system-ui;padding:13px;border-radius:12px;border:1.5px solid var(--line);background:#0f1b1f;color:var(--ink);margin-bottom:10px}
+.login button{width:100%;border:0;border-radius:14px;padding:15px;font:700 17px system-ui;background:var(--ok);color:#04150c}
+.err{color:var(--bad);font-weight:600;min-height:1.3em;margin-bottom:6px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Κουζίνα</h1>
+  <span class="pill">Νέες <b id="cNew">0</b></span>
+  <span class="pill">Σε εξέλιξη <b id="cPrep">0</b></span>
+  <button id="snd" type="button">🔔 Ήχος: ΑΝΕΝΕΡΓΟΣ</button>
+  <button id="out" type="button">Έξοδος</button>
+</header>
+<main>
+  <div id="work" class="grid"></div>
+  <div id="readyWrap" hidden><h2>Έτοιμες — περιμένουν σερβιτόρο</h2><div id="ready" class="grid"></div></div>
+</main>
+<div class="login" id="login"><form id="lf">
+  <h2>Σύνδεση κουζίνας</h2>
+  <input id="lpw" type="password" placeholder="Κωδικός" autocomplete="current-password">
+  <div class="err" id="lerr"></div>
+  <button type="submit">Είσοδος</button>
+</form></div>
+
+<script>
+(function(){
+var $=function(s){return document.querySelector(s)};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var orders=[],seen=null,fresh={},sound=false,actx=null,pollT=null,wl=null;
+
+function api(url,opt){
+  opt=opt||{};opt.headers={'Content-Type':'application/json'};opt.credentials='same-origin';
+  return fetch(url,opt).then(function(r){
+    if(r.status===401){showLogin();throw new Error('auth')}
+    return r.json().catch(function(){return{}}).then(function(d){if(!r.ok)throw new Error(d.error||'Σφάλμα');return d});
+  });
+}
+/* ---------- ήχος ---------- */
+function ding(){
+  if(!sound)return;
+  try{
+    var c=actx,t=c.currentTime;
+    [880,1175,880].forEach(function(f,i){var o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;o.connect(g);g.connect(c.destination);
+      g.gain.setValueAtTime(.0001,t+i*.22);g.gain.exponentialRampToValueAtTime(.35,t+i*.22+.02);g.gain.exponentialRampToValueAtTime(.0001,t+i*.22+.2);o.start(t+i*.22);o.stop(t+i*.22+.22)});
+  }catch(e){}
+}
+$('#snd').addEventListener('click',function(){
+  sound=!sound;
+  if(sound){try{var C=window.AudioContext||window.webkitAudioContext;actx=actx||new C();if(actx.state==='suspended')actx.resume()}catch(e){sound=false}}
+  this.classList.toggle('on',sound);this.textContent='🔔 Ήχος: '+(sound?'ΕΝΕΡΓΟΣ':'ΑΝΕΝΕΡΓΟΣ');
+  if(sound){ding();keepAwake()}
+});
+function keepAwake(){try{if(navigator.wakeLock&&!wl){navigator.wakeLock.request('screen').then(function(l){wl=l;l.addEventListener('release',function(){wl=null})}).catch(function(){})}}catch(e){}}
+
+/* ---------- login ---------- */
+function showLogin(){$('#login').classList.add('on');clearInterval(pollT)}
+$('#lf').addEventListener('submit',function(e){
+  e.preventDefault();$('#lerr').textContent='';
+  fetch('/api/staff/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({password:$('#lpw').value})})
+  .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Σφάλμα');return d})})
+  .then(function(){$('#lpw').value='';$('#login').classList.remove('on');start()})
+  .catch(function(er){$('#lerr').textContent=er.message});
+});
+$('#out').addEventListener('click',function(){fetch('/api/staff/logout',{method:'POST',credentials:'same-origin'}).then(showLogin)});
+
+/* ---------- προβολή ---------- */
+function mins(t){return Math.max(0,Math.floor((Date.now()-t)/60000))}
+function fmt(m){return m<60?m+'′':Math.floor(m/60)+'ω '+(m%60)+'′'}
+function card(o){
+  var m=mins(o.created_at),cls='card '+o.status+(m>=20?' vlate':m>=10?' late':'')+(fresh[o.id]?' fresh':'');
+  var h='<div class="'+cls+'" data-id="'+o.id+'"><div class="hd"><span class="tb"><small style="font-size:13px;color:var(--mut);margin-right:8px;letter-spacing:.06em">ΤΡΑΠΕΖΙ</small>'+esc(o.table_label)+'</span><span class="tm">'+fmt(m)+'</span></div>'+
+    '<div class="who">#'+o.id+(o.waiter?' · '+esc(o.waiter):'')+'</div><ul>';
+  o.items.forEach(function(l){h+='<li><b>'+l.qty+'×</b>'+esc(l.name)+(l.note?'<i>'+esc(l.note)+'</i>':'')+'</li>'});
+  h+='</ul>';
+  if(o.note)h+='<div class="onote">'+esc(o.note)+'</div>';
+  h+='<div class="acts">';
+  if(o.status==='new')h+='<button class="b-start" data-s="preparing" type="button">Ξεκίνα</button><button class="b-ready" data-s="ready" type="button">Έτοιμο</button>';
+  else h+='<button class="b-undo" data-s="new" type="button" title="Επαναφορά">↩</button><button class="b-ready" data-s="ready" type="button">Έτοιμο ✓</button>';
+  h+='<button class="b-x" data-s="cancelled" type="button" title="Ακύρωση">✕</button></div></div>';
+  return h;
+}
+function draw(){
+  var work=orders.filter(function(o){return o.status!=='ready'}),rd=orders.filter(function(o){return o.status==='ready'});
+  $('#cNew').textContent=work.filter(function(o){return o.status==='new'}).length;
+  $('#cPrep').textContent=work.filter(function(o){return o.status==='preparing'}).length;
+  $('#work').innerHTML=work.length?work.map(card).join(''):'<div class="empty" style="grid-column:1/-1">Καμία παραγγελία. 👌</div>';
+  $('#readyWrap').hidden=!rd.length;
+  $('#ready').innerHTML=rd.map(function(o){
+    return '<div class="mini" data-id="'+o.id+'"><div><div class="t">'+esc(o.table_label)+'</div><div class="s">'+o.items.reduce(function(a,l){return a+l.qty},0)+' πιάτα'+(o.waiter?' · '+esc(o.waiter):'')+'</div></div><button data-s="preparing" type="button">↩ Επαναφορά</button></div>';
+  }).join('');
+}
+function act(e){
+  var b=e.target.closest('button[data-s]');if(!b)return;
+  var box=b.closest('[data-id]');if(!box)return;
+  if(b.dataset.s==='cancelled'&&!confirm('Να ακυρωθεί η παραγγελία;'))return;
+  b.disabled=true;
+  api('/api/staff/orders/'+box.dataset.id,{method:'PATCH',body:JSON.stringify({status:b.dataset.s})}).then(poll).catch(function(er){b.disabled=false;if(er.message!=='auth')alert(er.message)});
+}
+$('#work').addEventListener('click',act);$('#ready').addEventListener('click',act);
+
+function poll(){
+  return api('/api/staff/orders').then(function(d){
+    orders=d.orders;
+    var ids={};orders.forEach(function(o){ids[o.id]=1});
+    if(seen){var n=0;orders.forEach(function(o){if(!seen[o.id]&&o.status==='new'){n++;fresh[o.id]=1}});if(n)ding()}
+    seen=ids;draw();
+    Object.keys(fresh).forEach(function(id){setTimeout(function(){delete fresh[id]},4000)});
+  }).catch(function(){});
+}
+function start(){poll();clearInterval(pollT);pollT=setInterval(poll,4000)}
+setInterval(function(){if(orders.length)draw()},30000); // ενημέρωση λεπτών χωρίς νέο αίτημα
+document.addEventListener('visibilitychange',function(){if(!document.hidden){poll();if(sound)keepAwake()}});
+api('/api/staff/me').then(start).catch(function(){});
+})();
+</script>
+</body>
+</html>
