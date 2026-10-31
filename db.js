@@ -18,11 +18,6 @@ CREATE TABLE IF NOT EXISTS items (
   name TEXT NOT NULL, description TEXT DEFAULT '', price REAL DEFAULT 0,
   available INTEGER DEFAULT 1, sort INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS views (day TEXT NOT NULL, lang TEXT NOT NULL, n INTEGER DEFAULT 0, PRIMARY KEY (day, lang));
-CREATE TABLE IF NOT EXISTS analytics_events (
-  day TEXT NOT NULL, kind TEXT NOT NULL, lang TEXT NOT NULL DEFAULT 'el',
-  category_id INTEGER NOT NULL DEFAULT 0, table_name TEXT NOT NULL DEFAULT '', n INTEGER DEFAULT 0,
-  PRIMARY KEY (day, kind, lang, category_id, table_name)
-);
 `);
 const addCol = (t, c, d) => {
   if (!db.prepare(`PRAGMA table_info(${t})`).all().some(x => x.name === c)) db.exec(`ALTER TABLE ${t} ADD COLUMN ${c} ${d}`);

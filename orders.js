@@ -46,6 +46,8 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
   const getLines = db.prepare('SELECT item_id, name, category, qty, note FROM order_items WHERE order_id = ? ORDER BY id');
   const listActive = db.prepare(`SELECT * FROM orders WHERE status IN ('new','preparing','ready') ORDER BY created_at, id`);
   const setStatusStmt = db.prepare('UPDATE orders SET status = ?, updated_at = ? WHERE id = ?');
+  const delOneLines = db.prepare('DELETE FROM order_items WHERE order_id = ?');
+  const delOne = db.prepare('DELETE FROM orders WHERE id = ?');
   const delLines = db.prepare('DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE created_at < ?)');
   const delOrders = db.prepare('DELETE FROM orders WHERE created_at < ?');
 
@@ -114,7 +116,16 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
     try { delLines.run(cut); delOrders.run(cut); db.exec('COMMIT'); } catch (e) { try { db.exec('ROLLBACK'); } catch {} throw e; }
   }
 
-  return { validate, create, list, setStatus, cleanup };
+  const get = id => full(getOrder.get(id));
+
+  function remove(id) {
+    if (!getOrder.get(id)) return { error: 'Η παραγγελία δεν βρέθηκε.', code: 404 };
+    db.exec('BEGIN');
+    try { delOneLines.run(id); delOne.run(id); db.exec('COMMIT'); } catch (e) { try { db.exec('ROLLBACK'); } catch {} throw e; }
+    return { ok: true };
+  }
+
+  return { validate, create, list, get, setStatus, remove, cleanup };
 }
 
 // Σύνδεση με το express. ctx: { sign, getCookie, safeEq, attempts, adminAuthed, adminPassword, staffPassword, pub, path }
@@ -154,12 +165,23 @@ function mountOrders(app, db, ctx) {
     if (r.error) return res.status(400).json({ error: r.error });
     res.status(r.duplicate ? 200 : 201).json(r.order);
   });
+  app.get('/api/staff/orders/:id', guard, (req, res) => {
+    const o = core.get(Number(req.params.id));
+    if (!o) return res.status(404).json({ error: 'Η παραγγελία δεν βρέθηκε.' });
+    res.json(o);
+  });
+  app.delete('/api/staff/orders/:id', guard, (req, res) => {
+    const r = core.remove(Number(req.params.id));
+    if (r.error) return res.status(r.code || 400).json({ error: r.error });
+    res.json({ ok: true });
+  });
   app.patch('/api/staff/orders/:id', guard, (req, res) => {
     const r = core.setStatus(Number(req.params.id), String((req.body && req.body.status) || ''));
     if (r.error) return res.status(r.code || 400).json({ error: r.error });
     res.json(r.order);
   });
   app.get('/waiter', (req, res) => res.sendFile(ctx.path.join(ctx.pub, 'waiter.html')));
+  app.get('/order', (req, res) => res.sendFile(ctx.path.join(ctx.pub, 'order.html')));
   app.get('/kitchen', (req, res) => res.sendFile(ctx.path.join(ctx.pub, 'kitchen.html')));
 }
 

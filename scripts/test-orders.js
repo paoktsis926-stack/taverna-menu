@@ -48,6 +48,14 @@ assert.equal(o.setStatus(id, 'new').code, 409);
 assert.equal(o.setStatus(12345, 'ready').code, 404);
 assert.ok(o.setStatus(id, 'foo').error);
 
+// χειροκίνητη διαγραφή
+const d = o.create({ table: '3', items: [{ id: 2, qty: 1 }] }).order;
+assert.equal(o.get(d.id).items.length, 1);
+assert.ok(o.remove(d.id).ok);
+assert.equal(o.get(d.id), null);
+assert.equal(o.remove(d.id).code, 404);
+assert.equal(db.prepare('SELECT COUNT(*) n FROM order_items WHERE order_id = ?').get(d.id).n, 0);
+
 // καθαρισμός παλιών
 db.exec(`UPDATE orders SET created_at = 1`);
 o.cleanup();

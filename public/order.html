@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Εκτύπωση παραγγελίας</title>
+<style>
+@page{size:A4 portrait;margin:14mm}
+*{box-sizing:border-box}
+html,body{margin:0;background:#e9ecec;color:#111;font:16px/1.4 "Helvetica Neue",Arial,"Segoe UI",system-ui,sans-serif}
+.bar{position:sticky;top:0;background:#103c46;color:#fff;padding:10px 16px;display:flex;gap:10px;align-items:center;font:600 14px system-ui}
+.bar span{flex:1}.bar button{border:0;border-radius:10px;padding:10px 16px;font:700 14px system-ui;background:#c8962d;color:#fff;cursor:pointer}
+.bar button.g{background:#fff;color:#103c46}
+.sheet{width:210mm;min-height:297mm;margin:14px auto;background:#fff;padding:14mm;box-shadow:0 4px 20px rgba(0,0,0,.15)}
+.top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #111;padding-bottom:8mm}
+.rest{font:700 13pt Georgia,"Times New Roman",serif;color:#444}
+.title{font:800 15pt Arial,sans-serif;letter-spacing:.12em;margin-top:2mm}
+.no{font:800 15pt Arial,sans-serif;text-align:right}
+.tableBox{margin:8mm 0;border:3px solid #111;border-radius:4mm;padding:6mm 8mm;display:flex;justify-content:space-between;align-items:baseline}
+.tableBox small{font:700 12pt Arial,sans-serif;letter-spacing:.14em;color:#444}
+.tableBox b{font:900 56pt/1 Arial,sans-serif}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:2mm 8mm;font-size:12pt;margin-bottom:6mm}
+.meta div b{display:inline-block;min-width:26mm;color:#444}
+.cat{margin:6mm 0 2mm;font:800 11pt Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#444;border-bottom:1.5px solid #999;padding-bottom:1mm;break-after:avoid}
+.line{display:flex;gap:5mm;align-items:flex-start;padding:3mm 0;border-bottom:1px dashed #bbb;break-inside:avoid}
+.box{flex:none;width:7mm;height:7mm;border:2px solid #111;border-radius:1.2mm;margin-top:1.4mm}
+.q{flex:none;min-width:16mm;font:900 22pt/1.1 Arial,sans-serif}
+.n{flex:1;font:700 17pt/1.25 Arial,sans-serif}
+.n i{display:block;font:italic 700 13pt Arial,sans-serif;margin-top:1mm;padding:1.2mm 3mm;border:1.5px solid #111;border-radius:2mm;background:#f2f2f2}
+.onote{margin-top:8mm;border:2.5px solid #111;border-radius:3mm;padding:4mm 5mm;break-inside:avoid}
+.onote small{display:block;font:800 10pt Arial,sans-serif;letter-spacing:.12em;color:#444;margin-bottom:1mm}
+.onote div{font:700 15pt Arial,sans-serif}
+.foot{margin-top:10mm;font-size:10pt;color:#666;display:flex;justify-content:space-between}
+.msg{text-align:center;padding:60px 20px;font:600 18px system-ui}
+@media print{html,body{background:#fff}.bar{display:none}.sheet{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="bar"><span>Προεπισκόπηση παραγγελίας (A4 κάθετο)</span><button class="g" onclick="history.length>1&&window.close()">Κλείσιμο</button><button onclick="window.print()">Εκτύπωση / Αποθήκευση PDF</button></div>
+<div id="root"><div class="msg">Φόρτωση…</div></div>
+<script>
+(function(){
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var q=new URLSearchParams(location.search),id=Number(q.get('id'));
+var root=document.getElementById('root');
+function msg(t){root.innerHTML='<div class="msg">'+esc(t)+'</div>'}
+if(!Number.isInteger(id)||id<1){msg('Λείπει ο αριθμός παραγγελίας.')}
+else Promise.all([
+  fetch('/api/staff/orders/'+id,{credentials:'same-origin',cache:'no-store'}),
+  fetch('/api/menu',{cache:'no-store'}).then(function(r){return r.json()}).catch(function(){return{settings:{}}})
+]).then(function(a){
+  var r=a[0],menu=a[1];
+  if(r.status===401){msg('Απαιτείται σύνδεση. Ανοίξτε πρώτα τη σελίδα /waiter ή /kitchen και συνδεθείτε.');return}
+  if(r.status===404){msg('Η παραγγελία δεν υπάρχει πια (ίσως διαγράφηκε).');return}
+  if(!r.ok){msg('Σφάλμα φόρτωσης.');return}
+  return r.json().then(function(o){draw(o,(menu.settings&&menu.settings.name)||'')});
+}).catch(function(){msg('Δεν υπάρχει σύνδεση με τον διακομιστή.')});
+
+var STN={new:'Νέα',preparing:'Σε εξέλιξη',ready:'Έτοιμη',served:'Σερβιρίστηκε',cancelled:'Ακυρώθηκε'};
+function draw(o,name){
+  var d=new Date(o.created_at),fmtD=d.toLocaleDateString('el-GR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),fmtT=d.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'});
+  var groups=[],idx={};
+  o.items.forEach(function(l){var c=l.category||'';if(!(c in idx)){idx[c]=groups.length;groups.push({c:c,l:[]})}groups[idx[c]].l.push(l)});
+  var n=o.items.reduce(function(a,l){return a+l.qty},0);
+  var h='<div class="sheet"><div class="top"><div><div class="rest">'+esc(name)+'</div><div class="title">ΠΑΡΑΓΓΕΛΙΑ ΚΟΥΖΙΝΑΣ</div></div><div class="no">Νο '+o.id+'</div></div>'+
+    '<div class="tableBox"><small>ΤΡΑΠΕΖΙ</small><b>'+esc(o.table_label)+'</b></div>'+
+    '<div class="meta"><div><b>Ημερομηνία:</b>'+esc(fmtD)+'</div><div><b>Ώρα:</b>'+esc(fmtT)+'</div>'+
+    '<div><b>Σερβιτόρος:</b>'+esc(o.waiter||'—')+'</div><div><b>Σύνολο:</b>'+n+(n===1?' τεμάχιο':' τεμάχια')+'</div></div>';
+  groups.forEach(function(g){
+    if(groups.length>1||g.c)h+='<div class="cat">'+esc(g.c||'Λοιπά')+'</div>';
+    g.l.forEach(function(l){h+='<div class="line"><span class="box"></span><span class="q">'+l.qty+'×</span><span class="n">'+esc(l.name)+(l.note?'<i>'+esc(l.note)+'</i>':'')+'</span></div>'});
+  });
+  if(o.note)h+='<div class="onote"><small>ΣΧΟΛΙΟ ΠΑΡΑΓΓΕΛΙΑΣ</small><div>'+esc(o.note)+'</div></div>';
+  h+='<div class="foot"><span>Κατάσταση: '+esc(STN[o.status]||o.status)+'</span><span>Εκτυπώθηκε '+esc(new Date().toLocaleString('el-GR'))+'</span></div></div>';
+  root.innerHTML=h;document.title='Παραγγελία '+o.id+' — Τραπέζι '+o.table_label;
+  if(q.get('print')==='1')setTimeout(function(){window.print()},400);
+}
+})();
+</script>
+</body>
+</html>

@@ -37,6 +37,7 @@ h2{margin:18px 0 10px;font-size:14px;letter-spacing:.08em;text-transform:upperca
 .acts{display:flex;gap:8px}
 .acts button{flex:1;border:0;border-radius:14px;padding:16px 8px;font:800 18px system-ui;color:#04150c}
 .b-start{background:var(--blue);color:#fff!important}.b-ready{background:var(--ok)}.b-undo{flex:0 0 56px!important;background:#2b4249;color:var(--ink)!important}
+.b-p{flex:0 0 56px!important;background:#2b4249;color:var(--ink)!important}
 .b-x{flex:0 0 56px!important;background:transparent;color:var(--bad)!important;border:1px solid var(--bad)!important}
 .mini{background:var(--card);border:1px solid var(--ok);border-radius:14px;padding:10px 14px;display:flex;justify-content:space-between;gap:10px;align-items:center}
 .mini .t{font:800 22px system-ui}.mini .s{color:var(--mut);font-size:14px}
@@ -124,7 +125,7 @@ function card(o){
   h+='<div class="acts">';
   if(o.status==='new')h+='<button class="b-start" data-s="preparing" type="button">Ξεκίνα</button><button class="b-ready" data-s="ready" type="button">Έτοιμο</button>';
   else h+='<button class="b-undo" data-s="new" type="button" title="Επαναφορά">↩</button><button class="b-ready" data-s="ready" type="button">Έτοιμο ✓</button>';
-  h+='<button class="b-x" data-s="cancelled" type="button" title="Ακύρωση">✕</button></div></div>';
+  h+='<button class="b-p" data-p="1" type="button" title="Εκτύπωση">🖨</button><button class="b-x" data-d="1" type="button" title="Διαγραφή παραγγελίας">✕</button></div></div>';
   return h;
 }
 function draw(){
@@ -134,15 +135,18 @@ function draw(){
   $('#work').innerHTML=work.length?work.map(card).join(''):'<div class="empty" style="grid-column:1/-1">Καμία παραγγελία. 👌</div>';
   $('#readyWrap').hidden=!rd.length;
   $('#ready').innerHTML=rd.map(function(o){
-    return '<div class="mini" data-id="'+o.id+'"><div><div class="t">'+esc(o.table_label)+'</div><div class="s">'+o.items.reduce(function(a,l){return a+l.qty},0)+' πιάτα'+(o.waiter?' · '+esc(o.waiter):'')+'</div></div><button data-s="preparing" type="button">↩ Επαναφορά</button></div>';
+    return '<div class="mini" data-id="'+o.id+'"><div><div class="t">'+esc(o.table_label)+'</div><div class="s">'+o.items.reduce(function(a,l){return a+l.qty},0)+' πιάτα'+(o.waiter?' · '+esc(o.waiter):'')+'</div></div><span><button data-p="1" type="button" title="Εκτύπωση">🖨</button> <button data-s="preparing" type="button">↩ Επαναφορά</button> <button data-d="1" type="button" title="Διαγραφή" style="color:var(--bad)">✕</button></span></div>';
   }).join('');
 }
 function act(e){
-  var b=e.target.closest('button[data-s]');if(!b)return;
+  var b=e.target.closest('button');if(!b)return;
   var box=b.closest('[data-id]');if(!box)return;
-  if(b.dataset.s==='cancelled'&&!confirm('Να ακυρωθεί η παραγγελία;'))return;
+  if(b.dataset.p){window.open('/order?id='+box.dataset.id+'&print=1','_blank');return}
+  var del=!!b.dataset.d;
+  if(!del&&!b.dataset.s)return;
+  if(del&&!confirm('Να διαγραφεί οριστικά η παραγγελία;'))return;
   b.disabled=true;
-  api('/api/staff/orders/'+box.dataset.id,{method:'PATCH',body:JSON.stringify({status:b.dataset.s})}).then(poll).catch(function(er){b.disabled=false;if(er.message!=='auth')alert(er.message)});
+  api('/api/staff/orders/'+box.dataset.id,del?{method:'DELETE'}:{method:'PATCH',body:JSON.stringify({status:b.dataset.s})}).then(poll).catch(function(er){b.disabled=false;if(er.message!=='auth')alert(er.message)});
 }
 $('#work').addEventListener('click',act);$('#ready').addEventListener('click',act);
 
