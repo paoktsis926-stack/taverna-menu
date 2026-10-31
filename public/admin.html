@@ -77,7 +77,7 @@ dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::ba
     <nav id="nv">
       <button data-t="dash" class="on">Dashboard</button><button data-t="prod">Προϊόντα</button>
       <button data-t="tr">Μεταφράσεις</button><button data-t="price">Τιμές</button>
-      <button data-t="print">PDF, QR, Table tents</button><button data-t="stats">Αναλυτικά</button><button data-t="set">Ρυθμίσεις</button>
+      <button data-t="print">PDF, QR, Table tents</button><button data-t="stats">Αναλυτικά</button><button data-t="look">Εμφάνιση</button><button data-t="set">Ρυθμίσεις</button>
     </nav>
     <div class="sf"><a href="/" target="_blank">Δημόσιο μενού</a><button id="out">Έξοδος</button></div>
   </aside>
@@ -138,6 +138,13 @@ dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::ba
       <div class="card"><b>Τελευταίες 14 ημέρες</b><div class="chart" id="chart"></div></div>
     </section>
 
+    <section id="t-look" hidden>
+      <h1>Εμφάνιση μενού</h1><p class="sub">Διάλεξε πώς φαίνονται τα πιάτα. Πάτα «Προεπισκόπηση» για να το δεις πριν αποθηκεύσεις.</p>
+      <div class="card" style="max-width:560px"><div id="lk"></div><p class="err" id="lke"></p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px"><button id="lkprev" type="button">Προεπισκόπηση</button><button class="pri" id="lksave" type="button">Αποθήκευση</button></div>
+        <p class="sub" style="margin-top:12px">Η αρίθμηση και τα ελληνικά + αγγλικά μαζί ισχύουν και στο PDF εκτύπωσης.</p></div>
+    </section>
+
     <section id="t-set" hidden>
       <h1>Ρυθμίσεις</h1><p class="sub">Στοιχεία που εμφανίζονται στο μενού και στο PDF</p>
       <div class="card" style="max-width:560px"><div id="sf"></div><p class="err" id="se"></p><button class="pri" id="ssave">Αποθήκευση</button></div>
@@ -187,7 +194,7 @@ const fail=e=>alert(e.message);
 const all=()=>D.categories.flatMap(c=>c.items);
 
 async function load(){D=await api('/admin/menu');ST=await api('/admin/stats');view(true);renderAll()}
-function renderAll(){head();dash();opts();prod();tr();settings();stats()}
+function renderAll(){head();dash();opts();prod();tr();settings();look();stats()}
 function head(){const n=D.settings.name;$('#bn').textContent=n;$('#logo').textContent=[...n][0]||'M';document.title='Διαχείριση – '+n}
 function views(days){const lim=new Date(Date.now()-(days-1)*864e5).toISOString().slice(0,10);return ST.rows.filter(r=>r.day>=lim).reduce((a,r)=>a+r.n,0)}
 function dash(){const it=all(),on=it.filter(i=>i.available).length,photos=it.filter(i=>i.image_url).length;
@@ -330,6 +337,18 @@ $('#table-qr-show').onclick=()=>{
  $('#table-qr-download').href='/qr.png?download=1&size=2000&table='+encodeURIComponent(table);
  $('#table-qr-download').hidden=false;
 };
+const LOOK=[
+ ['layout_style','Στυλ πιάτου',[['side','Φωτογραφία δίπλα στο κείμενο'],['top','Μεγάλη φωτογραφία από πάνω'],['text','Μόνο κείμενο (χωρίς φωτογραφίες)']]],
+ ['layout_photo','Μέγεθος φωτογραφίας',[['sm','Μικρή'],['md','Μεσαία'],['lg','Μεγάλη']]],
+ ['layout_shape','Σχήμα φωτογραφίας',[['square','Τετράγωνο'],['wide','Οριζόντιο (4:3)'],['round','Στρογγυλό']]],
+ ['layout_numbers','Αρίθμηση πιάτων (1, 2, 3…)',[['0','Όχι'],['1','Ναι']]],
+ ['layout_bilingual','Ελληνικά και αγγλικά μαζί (όπως στα έντυπα μενού)',[['0','Όχι'],['1','Ναι']]],
+ ['layout_columns','Στήλες στον υπολογιστή',[['2','2 στήλες'],['1','1 στήλη']]]];
+function look(){
+  $('#lk').innerHTML=LOOK.map(([k,l,o])=>`<label>${l}</label><select id="l-${k}">${o.map(([v,t])=>`<option value="${v}"${(D.settings[k]||o[0][0])===v?' selected':''}>${t}</option>`).join('')}</select>`).join('')}
+const lookVals=()=>Object.fromEntries(LOOK.map(([k])=>[k,$('#l-'+k).value]));
+$('#lkprev').onclick=()=>window.open('/?'+new URLSearchParams(lookVals()).toString(),'_blank');
+$('#lksave').onclick=async()=>{try{await api('/admin/settings','PUT',lookVals());$('#lke').className='ok';$('#lke').textContent='Αποθηκεύτηκε';await load()}catch(x){$('#lke').className='err';$('#lke').textContent=x.message}};
 $('#ssave').onclick=async()=>{
   const b={};SF.forEach(([k])=>b[k]=$('#s-'+k).value);
   try{await api('/admin/settings','PUT',b);$('#se').className='ok';$('#se').textContent='Αποθηκεύτηκε';await load()}catch(x){$('#se').className='err';$('#se').textContent=x.message}};

@@ -51,7 +51,12 @@ db.transaction(() => {
   const base = { tagline_bg: '40 години с изискани вкусове', tagline_tr: '40 yıldır seçkin lezzetler', footer_bg: 'Цените могат да се променят в зависимост от наличностите на пазара.', footer_tr: 'Fiyatlar piyasa koşullarına göre değişebilir.' };
   db.transaction(() => { for (const k in base) fill.run(k, base[k]); })();
 }
-const DEF = { name: 'Ψαροταβέρνα «Τα Μπαρμπούνια»', tagline: '', tagline_en: '', tagline_bg: '', tagline_tr: '', address: '', footer: '', footer_en: '', footer_bg: '', footer_tr: '', currency: '€' };
+const LAYOUT = {
+  layout_style: ['side', 'top', 'text'], layout_photo: ['sm', 'md', 'lg'], layout_shape: ['square', 'round', 'wide'],
+  layout_numbers: ['0', '1'], layout_bilingual: ['0', '1'], layout_columns: ['1', '2'],
+};
+const LAYOUT_DEF = { layout_style: 'side', layout_photo: 'md', layout_shape: 'square', layout_numbers: '0', layout_bilingual: '0', layout_columns: '2' };
+const DEF = { ...LAYOUT_DEF, name: 'Ψαροταβέρνα «Τα Μπαρμπούνια»', tagline: '', tagline_en: '', tagline_bg: '', tagline_tr: '', address: '', footer: '', footer_en: '', footer_bg: '', footer_tr: '', currency: '€' };
 const getSettings = () => {
   const s = { ...DEF };
   db.prepare('SELECT * FROM settings').all().forEach(r => (s[r.key] = r.value));
@@ -185,6 +190,7 @@ A.get('/stats', (req, res) => res.json({
   total: db.prepare('SELECT COALESCE(SUM(n),0) n FROM views').get().n }));
 
 A.put('/settings', (req, res) => {
+  for (const k in LAYOUT) if (k in req.body && !LAYOUT[k].includes(String(req.body[k]))) return res.status(400).json({ error: 'Μη έγκυρη επιλογή εμφάνισης.' });
   const up = db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value');
   db.transaction(() => Object.keys(DEF).forEach(k => k in req.body && up.run(k, str(req.body[k], 300))))();
   res.json(getSettings());
