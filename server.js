@@ -140,14 +140,26 @@ app.post('/api/logout', (req, res) => {
 app.get('/api/menu', (req, res) => { res.set('Cache-Control', 'no-cache'); res.json(getMenu(false)); });
 app.post('/api/view', (req, res) => {
   const lang = ['el','en','bg','tr'].includes(req.body.lang) ? req.body.lang : 'el';
+  const table = str(req.body.table, 40).replace(/[^\p{L}\p{N}_ -]/gu, '');
+  const source = req.body.source === 'qr' ? 'qr' : '';
   db.prepare("INSERT INTO views(day,lang,n) VALUES(date('now'),?,1) ON CONFLICT(day,lang) DO UPDATE SET n=n+1").run(lang);
+  if (source === 'qr') db.prepare("INSERT INTO analytics_events(day,kind,lang,table_name,n) VALUES(date('now'),'qr_view',?,?,1) ON CONFLICT(day,kind,lang,category_id,table_name) DO UPDATE SET n=n+1").run(lang, table);
+  res.json({ ok: true });
+});
+app.post('/api/analytics', (req, res) => {
+  const kind = req.body.kind === 'category_click' ? 'category_click' : '';
+  const categoryId = Number(req.body.category_id);
+  const lang = ['el','en','bg','tr'].includes(req.body.lang) ? req.body.lang : 'el';
+  if (!kind || !Number.isSafeInteger(categoryId) || categoryId < 1 || !db.prepare('SELECT 1 FROM categories WHERE id=? AND visible=1').get(categoryId))
+    return res.status(400).json({ error: 'Άκυρο analytics event' });
+  db.prepare("INSERT INTO analytics_events(day,kind,lang,category_id,n) VALUES(date('now'),?,?,?,1) ON CONFLICT(day,kind,lang,category_id,table_name) DO UPDATE SET n=n+1").run(kind, lang, categoryId);
   res.json({ ok: true });
 });
 
 const baseUrl = req => (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
 app.get('/qr.png', async (req, res) => {
   const table = str(req.query.table, 40).replace(/[^\p{L}\p{N}_ -]/gu, '')
-  const target = baseUrl(req) + '/' + (table ? '?table=' + encodeURIComponent(table) : '');
+  const target = baseUrl(req) + '/?source=qr' + (table ? '&table=' + encodeURIComponent(table) : '');
   const buf = await QRCode.toBuffer(target, {
     width: Math.min(Math.max(+req.query.size || 1000, 200), 3000), margin: 2, errorCorrectionLevel: 'M' });
   if (req.query.download) res.set('Content-Disposition', 'attachment; filename="menu-qr.png"');
@@ -155,7 +167,7 @@ app.get('/qr.png', async (req, res) => {
 });
 app.get('/qr.svg', async (req, res) => {
   const table = str(req.query.table, 40).replace(/[^\p{L}\p{N}_ -]/gu, '')
-  const target = baseUrl(req) + '/' + (table ? '?table=' + encodeURIComponent(table) : '');
+  const target = baseUrl(req) + '/?source=qr' + (table ? '&table=' + encodeURIComponent(table) : '');
   const svg = await QRCode.toString(target, { type: 'svg', margin: 1, errorCorrectionLevel: 'M' });
   if (req.query.download) res.set('Content-Disposition', 'attachment; filename="menu-qr.svg"');
   res.type('image/svg+xml').send(svg);
@@ -182,7 +194,11 @@ A.post('/upload-image', express.raw({ type: 'application/octet-stream', limit: '
 
 A.get('/stats', (req, res) => res.json({
   rows: db.prepare("SELECT day,lang,n FROM views WHERE day>=date('now','-29 day') ORDER BY day").all(),
-  total: db.prepare('SELECT COALESCE(SUM(n),0) n FROM views').get().n }));
+  total: db.prepare('SELECT COALESCE(SUM(n),0) n FROM views').get().n,
+  qr_total: db.prepare("SELECT COALESCE(SUM(n),0) n FROM analytics_events WHERE kind='qr_view' AND day>=date('now','-29 day')").get().n,
+  qr_tables: db.prepare("SELECT table_name,COALESCE(SUM(n),0) n FROM analytics_events WHERE kind='qr_view' AND day>=date('now','-29 day') AND table_name<>'' GROUP BY table_name ORDER BY n DESC,table_name").all(),
+  categories: db.prepare("SELECT e.category_id,COALESCE(c.name,'Κατηγορία που διαγράφηκε') name,COALESCE(SUM(e.n),0) n FROM analytics_events e LEFT JOIN categories c ON c.id=e.category_id WHERE e.kind='category_click' AND e.day>=date('now','-29 day') GROUP BY e.category_id,c.name ORDER BY n DESC,name LIMIT 10").all()
+}));
 
 A.put('/settings', (req, res) => {
   const up = db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value');
