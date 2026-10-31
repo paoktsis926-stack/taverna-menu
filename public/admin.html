@@ -52,6 +52,9 @@ main h1{font-size:34px;margin:0 0 4px;color:var(--sea)}.sub{color:var(--mute);ma
 .chart{display:flex;gap:6px;align-items:flex-end;height:170px;margin-top:10px}
 .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:12px}
 .bar i{display:block;width:100%;background:var(--sea2);border-radius:6px 6px 0 0;min-height:2px}.bar small{color:var(--mute)}
+.analytics-list{display:grid;gap:9px}.analytics-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}.analytics-row:last-child{border-bottom:0}.analytics-row span{color:var(--mute)}.analytics-row b{color:var(--sea);font-variant-numeric:tabular-nums}.analytics-empty{color:var(--mute);font-size:13px;padding:8px 0}
+.analytics-meter{height:7px;border-radius:99px;background:#e9ece6;overflow:hidden;margin-top:5px}.analytics-meter i{display:block;height:100%;background:var(--sea2);border-radius:99px}
+
 dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::backdrop{background:#0008}
 .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .btns a{display:inline-block;text-decoration:none;border:1px solid var(--sea);color:var(--sea);border-radius:10px;padding:8px 13px;background:#fff}
@@ -135,7 +138,12 @@ dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::ba
     <section id="t-stats" hidden>
       <h1>Αναλυτικά</h1><p class="sub">Επισκέψεις στο ψηφιακό μενού (μία ανά επισκέπτη και συνεδρία)</p>
       <div class="stats" id="ss"></div>
-      <div class="card"><b>Τελευταίες 14 ημέρες</b><div class="chart" id="chart"></div></div>
+      <div class="card"><b>Επισκέψεις — τελευταίες 14 ημέρες</b><div class="chart" id="chart"></div></div>
+      <div class="two" style="margin-top:14px">
+        <div class="card"><h3 style="margin-top:0">Χρήση γλωσσών · 30 ημέρες</h3><div id="language-stats" class="analytics-list"></div></div>
+        <div class="card"><h3 style="margin-top:0">Επισκέψεις από QR · 30 ημέρες</h3><div id="qr-stats" class="analytics-list"></div></div>
+      </div>
+      <div class="card" style="margin-top:14px"><h3 style="margin-top:0">Δημοφιλέστερες κατηγορίες · 30 ημέρες</h3><div id="category-stats" class="analytics-list"></div></div>
     </section>
 
     <section id="t-set" hidden>
@@ -313,18 +321,27 @@ $('#pgo').onclick=async()=>{
   try{const r=await api('/admin/bulk-price','POST',{category_id:cid?+cid:null,percent:p,step:+$('#pst').value});alert(`Ενημερώθηκαν ${r.updated} τιμές.`);$('#pp').value='';load()}catch(x){$('#pe').textContent=x.message}};
 
 function stats(){
-  const by={},ln={el:0,en:0};ST.rows.forEach(r=>{by[r.day]=(by[r.day]||0)+r.n;ln[r.lang]+=r.n});
-  $('#ss').innerHTML=[[views(1),'Σήμερα'],[views(7),'7 ημέρες'],[views(30),'30 ημέρες'],[ST.total,'Σύνολο'],[ln.en,'Αγγλικά (30 ημ.)']].map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+  const by={},ln={el:0,en:0,bg:0,tr:0};ST.rows.forEach(r=>{by[r.day]=(by[r.day]||0)+r.n;if(Object.prototype.hasOwnProperty.call(ln,r.lang))ln[r.lang]+=r.n});
+  const qrTotal=Number(ST.qr_total||0),tableRows=Array.isArray(ST.qr_tables)?ST.qr_tables:[],tableTotal=tableRows.reduce((n,r)=>n+Number(r.n||0),0),generalQr=Math.max(0,qrTotal-tableTotal);
+  $('#ss').innerHTML=[[views(1),'Σήμερα'],[views(7),'7 ημέρες'],[views(30),'30 ημέρες'],[ST.total,'Σύνολο'],[qrTotal,'Επισκέψεις μέσω QR']].map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
   const days=[...Array(14)].map((_,i)=>new Date(Date.now()-(13-i)*864e5).toISOString().slice(0,10));
   const max=Math.max(1,...days.map(d=>by[d]||0));
-  $('#chart').innerHTML=days.map(d=>`<div class="bar"><b>${by[d]||0}</b><i style="height:${(by[d]||0)/max*100}%"></i><small>${d.slice(8)}/${d.slice(5,7)}</small></div>`).join('')}
+  $('#chart').innerHTML=days.map(d=>`<div class="bar"><b>${by[d]||0}</b><i style="height:${(by[d]||0)/max*100}%"></i><small>${d.slice(8)}/${d.slice(5,7)}</small></div>`).join('');
+  const labels={el:'Ελληνικά',en:'English',bg:'Български',tr:'Türkçe'},langTotal=Object.values(ln).reduce((a,b)=>a+b,0);
+  $('#language-stats').innerHTML=Object.keys(labels).map(k=>`<div><div class="analytics-row"><span>${labels[k]}</span><b>${ln[k]}</b></div><div class="analytics-meter"><i style="width:${langTotal?ln[k]/langTotal*100:0}%"></i></div></div>`).join('');
+  const qrParts=[];if(generalQr)qrParts.push(['Γενικό QR',generalQr]);tableRows.forEach(r=>qrParts.push(['Τραπέζι '+(r.table_name||'—'),Number(r.n||0)]));
+  $('#qr-stats').innerHTML=qrParts.length?qrParts.map(([name,n])=>`<div class="analytics-row"><span>${esc(name)}</span><b>${n}</b></div>`).join(''):'<div class="analytics-empty">Δεν έχουν καταγραφεί επισκέψεις από QR ακόμη.</div>';
+  const categories=Array.isArray(ST.categories)?ST.categories:[];
+  const maxCategory=Math.max(1,...categories.map(c=>Number(c.n||0)));
+  $('#category-stats').innerHTML=categories.length?categories.map(c=>`<div><div class="analytics-row"><span>${esc(c.name)}</span><b>${Number(c.n||0)}</b></div><div class="analytics-meter"><i style="width:${Number(c.n||0)/maxCategory*100}%"></i></div></div>`).join(''):'<div class="analytics-empty">Οι προβολές κατηγοριών θα εμφανιστούν όταν οι επισκέπτες επιλέγουν κατηγορία από το μενού.</div>';
+}
 
 function settings(){
   $('#sf').innerHTML=SF.map(([k,l])=>`<label>${l}</label><input id="s-${k}" value="${esc(D.settings[k])}">`).join('');
   fetch('/api/info').then(r=>r.json()).then(j=>{$('#url').textContent=j.url;$('#url').href=j.url})}
 $('#table-qr-show').onclick=()=>{
  const table=$('#table-qr-name').value.trim();if(!table){alert('Συμπλήρωσε αριθμό ή όνομα τραπεζιού.');return}
- const q='?table='+encodeURIComponent(table),src='/qr.png?size=800'+ '&table='+encodeURIComponent(table);
+ const q='?source=qr&table='+encodeURIComponent(table),src='/qr.png?size=800'+ '&table='+encodeURIComponent(table);
  $('#table-qr-preview').src=src;$('#table-qr-preview').hidden=false;
  $('#table-qr-url').textContent=location.origin+'/'+q;
  $('#table-qr-download').href='/qr.png?download=1&size=2000&table='+encodeURIComponent(table);
