@@ -6,9 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "seed": "node seed.js",
-    "check": "node --check server.js && node --check db.js && node --check seed.js && node --check scripts/backup-db.js && node --check scripts/check-html.js && node --check scripts/test-db-migration.js",
+    "check": "node --check server.js && node --check db.js && node --check seed.js && node --check scripts/backup-db.js && node --check scripts/check-html.js && node --check scripts/test-db-migration.js && node --check scripts/test-content.js && node scripts/check-html.js",
     "backup": "node scripts/backup-db.js",
-    "test": "node scripts/test-db-migration.js"
+    "test": "node scripts/test-content.js && node scripts/test-db-migration.js"
   },
   "engines": {
     "node": ">=20"

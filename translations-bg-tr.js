@@ -43,8 +43,8 @@ module.exports = {
     'Μανιτάρι σαγανάκι':['Гъби саганаки','Saganaki mantar'],
     'Πατάτες στα κάρβουνα':['Картофи на жар','Közde patates'],
     'Ελιές':['Маслини','Zeytin'],
-    'Αντζούγιες':['Аншоа','Hamsi'],
-    'Τσίρος':['Пушена скумрия','Füme uskumru'],
+    'Αντζούγιες':['Аншоа','Tuzlu hamsi'],
+    'Τσίρος':['Цирос (сушена дребна риба)','Tsiros (kurutulmuş küçük balık)'],
     'Πατάτες τηγανητές':['Пържени картофи','Patates kızartması'],
     'Ριγανάτο σκουμπρί':['Скумрия с риган','Kekikli uskumru'],
     'Γαρίδα – σουβλάκι':['Скариди на шиш','Şişte karides'],
@@ -53,7 +53,7 @@ module.exports = {
     'Σνίτσελ κοτόπουλο με κόκκινη/άσπρη σάλτσα':['Пилешки шницел с червен или бял сос','Kırmızı veya beyaz soslu tavuk şnitzel'],
     'Μπιφτέκι γεμιστό':['Пълнено бифтеки','İçi dolgulu bifteki köftesi'],
     'Σουβλάκι κοτόπουλο':['Пилешко сувлаки','Tavuk souvlaki'],
-    'Τηγανιά με μανιτάρι':['Свинско или месно тиганя с гъби','Mantarlı tava kavurma'],
+    'Τηγανιά με μανιτάρι':['Свинско тиганя с гъби','Mantarlı domuz tava'],
     'Ριγανάτο':['Месо с риган','Kekikli et'],
     'Σουβλάκι χοιρινό':['Свинско сувлаки','Domuz souvlaki'],
     'Μπιφτέκια':['Гръцки кюфтета','Yunan köftesi'],
@@ -63,14 +63,14 @@ module.exports = {
     'Σνίτσελ Κοτόπουλο':['Пилешки шницел','Tavuk şnitzel'],
     'Παϊδάκια':['Агнешки котлети','Kuzu pirzola'],
     'Χοιρινή Μπριζόλα':['Свинска пържола','Domuz pirzola'],
-    'Πανσέτα':['Свински гърди','Domuz döş'],
+    'Πανσέτα':['Свинско коремче','Domuz karnı'],
     'Λουκάνικο':['Гръцка наденица','Yunan sosisi'],
     'Ψαρονέφρι':['Свинско бонфиле','Domuz bonfile'],
     'Κοτόπουλο φιλέτο':['Пилешко филе','Tavuk fileto'],
     'Μπαρμπούνια (κιλό)':['Червен кефал (за килограм)','Barbun (kilogram)'],
-    'Μπακαλιαράκια (κιλό)':['Дребна треска (за килограм)','Mezgit (kilogram)'],
+    'Μπακαλιαράκια (κιλό)':['Пържена треска (за килограм)','Kızarmış morina (kilogram)'],
     'Γλώσσες (κιλό)':['Морски език (за килограм)','Dil balığı (kilogram)'],
-    'Φέτα μελοκόπι (κιλό)':['Филе от мелокопи (за килограм)','Melokopi balığı dilimi (kilogram)'],
+    'Φέτα μελοκόπι (κιλό)':['Стек от мелокопи (за килограм)','Melokopi balığı dilimi (kilogram)'],
     'Κουτσουμουράκι (κιλό)':['Дребен червен кефал (за килограм)','Tekir (kilogram)'],
     'Γοφάρια (κιλό)':['Луфар (за килограм)','Lüfer (kilogram)'],
     'Μουρμούρια (κιλό)':['Мърмър (за килограм)','Mırmır (kilogram)'],
@@ -79,7 +79,7 @@ module.exports = {
     'Φέτα Ξιφία (κιλό)':['Филе от риба меч (за килограм)','Kılıç balığı dilimi (kilogram)'],
     'Φέτα Μαγιάτικο (κιλό)':['Филе от маятико (за килограм)','Akya balığı dilimi (kilogram)'],
     'Μυδοπίλαφο':['Ориз с миди','Midyeli pilav'],
-    'Μαρίδα (μερίδα)':['Пържена маридa','Kızarmış gümüş balığı'],
+    'Μαρίδα (μερίδα)':['Пържена смарида','Kızarmış izmarit'],
     'Αθερίνα (μερίδα)':['Пържена атерина','Kızarmış aterina balığı'],
     'Παέλια':['Паеля','Paella'],
     'Γαύρος φιλέτο':['Филе от хамсия','Hamsi fileto'],
@@ -91,7 +91,7 @@ module.exports = {
     'Σουπιά ψητή':['Сепия на скара','Izgara sübye'],
     'Καλαμαράκια νωπά (κιλό)':['Пресни калмари (за килограм)','Taze kalamar (kilogram)'],
     'Βάτος (μερίδα)':['Скат','Vatoz'],
-    'Μακαρονάκι καραβίδα':['Паста с лангустини','Kerevitli makarna'],
+    'Μακαρονάκι καραβίδα':['Паста с лангустини','Langustinli makarna'],
     'Γαρίδα (μερίδα)':['Скариди','Karides'],
     'Γαύρος γεμιστός (μερίδα)':['Пълнена хамсия','İçi dolgulu hamsi'],
     'Γαλέος (μερίδα)':['Морска котка','Camgöz'],
@@ -110,7 +110,7 @@ module.exports = {
     'Ούζο 12':['Узо 12','Uzo 12'],
     'Ούζο 15':['Узо 15','Uzo 15'],
     'Ούζο Mini':['Узо Mini','Mini Uzo'],
-    'Βαρβαγιάννη':['Узо Варвагиани','Varvagianni Uzo'],
+    'Βαρβαγιάννη':['Узо Варвагианис','Varvagiannis Uzo'],
     'Μπαμπατζίμ':['Узо Бабаджим','Babatzim Uzo'],
     'Έβρος μαγικό':['Еврос Магико','Evros Magiko'],
     'Εωθινόν':['Еотинон','Eothinon'],
@@ -135,5 +135,182 @@ module.exports = {
     'Φραπέ':['Фрапе кафе','Frappe kahve'],
     'Ελληνικός καφές':['Гръцко кафе','Yunan kahvesi'],
     'Χυμός':['Сок','Meyve suyu']
+  },
+  // Διορθώσεις για υπάρχουσες βάσεις: αλλάζει μια τιμή ΜΟΝΟ αν είναι ακόμη ίδια με την παλιά (δεν πατάει χειροκίνητες αλλαγές).
+  fixes: {
+    "Φέτα μελοκόπι (κιλό)": {
+      "en": [
+        "Feta cheese with honey (per kilo)",
+        "Melokopi fish steak (per kilo)"
+      ],
+      "bg": [
+        "Филе от мелокопи (за килограм)",
+        "Стек от мелокопи (за килограм)"
+      ]
+    },
+    "Φέτα Μαγιάτικο (κιλό)": {
+      "en": [
+        "Feta-style Greater Amberjack (per kilo)",
+        "Greater Amberjack steak (per kilo)"
+      ]
+    },
+    "Τσίρος": {
+      "en": [
+        "Smoked mackerel",
+        "Tsiros (dried small fish)"
+      ],
+      "bg": [
+        "Пушена скумрия",
+        "Цирос (сушена дребна риба)"
+      ],
+      "tr": [
+        "Füme uskumru",
+        "Tsiros (kurutulmuş küçük balık)"
+      ]
+    },
+    "Μαρίδα (μερίδα)": {
+      "en": [
+        "Fried smelt",
+        "Fried picarel (Marida)"
+      ],
+      "bg": [
+        "Пържена маридa",
+        "Пържена смарида"
+      ],
+      "tr": [
+        "Kızarmış gümüş balığı",
+        "Kızarmış izmarit"
+      ]
+    },
+    "Πανσέτα": {
+      "en": [
+        "Pancetta",
+        "Pork belly (Panseta)"
+      ],
+      "bg": [
+        "Свински гърди",
+        "Свинско коремче"
+      ],
+      "tr": [
+        "Domuz döş",
+        "Domuz karnı"
+      ]
+    },
+    "Τηγανιά με μανιτάρι": {
+      "en": [
+        "Fried Mushrooms",
+        "Pan-fried pork with mushrooms"
+      ],
+      "bg": [
+        "Свинско или месно тиганя с гъби",
+        "Свинско тиганя с гъби"
+      ],
+      "tr": [
+        "Mantarlı tava kavurma",
+        "Mantarlı domuz tava"
+      ]
+    },
+    "Ριγανάτο": {
+      "en": [
+        "Riganato",
+        "Riganato (meat with oregano)"
+      ]
+    },
+    "Ταραμάς": {
+      "en": [
+        "Fish Roe Salad (Taramas)",
+        "Taramasalata (fish roe dip)"
+      ]
+    },
+    "Μακαρονάκι καραβίδα": {
+      "en": [
+        "Crayfish pasta",
+        "Langoustine pasta"
+      ],
+      "tr": [
+        "Kerevitli makarna",
+        "Langustinli makarna"
+      ]
+    },
+    "Αντζούγιες": {
+      "en": [
+        "Anchovies",
+        "Salted anchovies"
+      ],
+      "tr": [
+        "Hamsi",
+        "Tuzlu hamsi"
+      ]
+    },
+    "Κουτσουμουράκι (κιλό)": {
+      "en": [
+        "Red Mullet (per kilo)",
+        "Small red mullet (Koutsomoura, per kilo)"
+      ]
+    },
+    "Μπαρμπούνια (κιλό)": {
+      "en": [
+        "Red Mullet (per kg)",
+        "Red mullet (per kilo)"
+      ]
+    },
+    "Γοφάρια (κιλό)": {
+      "en": [
+        "Bluefish",
+        "Bluefish (per kilo)"
+      ]
+    },
+    "Μουρμούρια (κιλό)": {
+      "en": [
+        "Striped Sea Bream",
+        "Striped seabream (per kilo)"
+      ]
+    },
+    "Σαργοί (κιλό)": {},
+    "Τσιπούρες (κιλό)": {
+      "en": [
+        "Sea Bream (per kilo)",
+        "Gilthead sea bream (per kilo)"
+      ]
+    },
+    "Μπακαλιαράκια (κιλό)": {
+      "bg": [
+        "Дребна треска (за килограм)",
+        "Пържена треска (за килограм)"
+      ],
+      "tr": [
+        "Mezgit (kilogram)",
+        "Kızarmış morina (kilogram)"
+      ]
+    },
+    "Γλώσσες (κιλό)": {},
+    "Καλαμαράκια νωπά (κιλό)": {
+      "en": [
+        "Fresh Calamari",
+        "Fresh calamari (per kilo)"
+      ]
+    },
+    "Γούνες (κιλό)": {
+      "en": [
+        "Dried salted fish (Gounes)",
+        "Dried salted fish (Gounes, per kilo)"
+      ]
+    },
+    "Βαρβαγιάννη": {
+      "bg": [
+        "Узо Варвагиани",
+        "Узо Варвагианис"
+      ],
+      "tr": [
+        "Varvagianni Uzo",
+        "Varvagiannis Uzo"
+      ]
+    },
+    "Χύμα": {
+      "en": [
+        "House Wine (Bulk)",
+        "House wine (from the barrel)"
+      ]
+    }
   }
 };

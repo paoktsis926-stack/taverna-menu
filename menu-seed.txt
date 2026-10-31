@@ -26,7 +26,7 @@
 Τζατζίκι / Tzatziki | 4.00
 Χτυπητή / Spicy Cheese Dip (Ktipiti) | 4.00
 Πατατοσαλάτα / Potato Salad | 4.00
-Ταραμάς / Fish Roe Salad (Taramas) | 4.00
+Ταραμάς / Taramasalata (fish roe dip) | 4.00
 Καβουροσαλάτα / Crab Salad | 8.00
 Τονοσαλάτα / Tuna Salad | 7.00
 
@@ -40,11 +40,10 @@
 Μανιτάρι σαγανάκι / Saganaki Mushrooms | 5.00
 Πατάτες στα κάρβουνα / Charcoal-grilled potatoes | 4.50
 Ελιές / Olives | 4.00
-Αντζούγιες / Anchovies | 4.00
-Τσίρος / Smoked mackerel | 4.00
+Αντζούγιες / Salted anchovies | 4.00
+Τσίρος / Tsiros (dried small fish) | 4.00
 Πατάτες τηγανητές / French fries | 3.50
 Ριγανάτο σκουμπρί / Oregano Mackerel | 6.00
-Κασεροκροκέτα / Kasseri Croquette | 4.00
 Γαρίδα – σουβλάκι / Shrimp skewer | 15.00
 Ψωμάκι / Bread | 1.00
 
@@ -53,8 +52,8 @@
 Σνίτσελ κοτόπουλο με κόκκινη/άσπρη σάλτσα / Chicken schnitzel with red/white sauce | 9.00
 Μπιφτέκι γεμιστό / Stuffed Bifteki | 9.00
 Σουβλάκι κοτόπουλο / Chicken Souvlaki | 8.00
-Τηγανιά με μανιτάρι / Fried Mushrooms | 8.00
-Ριγανάτο / Riganato | 8.00
+Τηγανιά με μανιτάρι / Pan-fried pork with mushrooms | 8.00
+Ριγανάτο / Riganato (meat with oregano) | 8.00
 Σουβλάκι χοιρινό / Pork souvlaki | 8.00
 Μπιφτέκια / Beef patties | 8.00
 Σουτζουκάκια / Soutzoukakia | 8.00
@@ -63,27 +62,27 @@
 Σνίτσελ Κοτόπουλο / Chicken | 8.00
 Παϊδάκια / Lamb chops | 15.00
 Χοιρινή Μπριζόλα / Pork Chop | 9.00
-Πανσέτα / Pancetta | 8.00
+Πανσέτα / Pork belly (Panseta) | 8.00
 Λουκάνικο / Greek Sausage | 8.00
 Ψαρονέφρι / Pork Tenderloin | 10.00
 Κοτόπουλο φιλέτο / Chicken fillet | 8.00
 
 # Ψάρια / Fish
-Μπαρμπούνια (κιλό) / Red Mullet (per kg) | 60.00
+Μπαρμπούνια (κιλό) / Red mullet (per kilo) | 60.00
 Μπακαλιαράκια (κιλό) / Fried cod (per kilo) | 40.00
 Γλώσσες (κιλό) / Sole (per kilo) | 50.00
-Φέτα μελοκόπι (κιλό) / Feta cheese with honey (per kilo) | 60.00
-Κουτσουμουράκι (κιλό) / Red Mullet (per kilo) | 40.00
-Γοφάρια (κιλό) / Bluefish | 60.00
-Μουρμούρια (κιλό) / Striped Sea Bream | 40.00
+Φέτα μελοκόπι (κιλό) / Melokopi fish steak (per kilo) | 60.00
+Κουτσουμουράκι (κιλό) / Small red mullet (Koutsomoura, per kilo) | 40.00
+Γοφάρια (κιλό) / Bluefish (per kilo) | 60.00
+Μουρμούρια (κιλό) / Striped seabream (per kilo) | 40.00
 Σαργοί (κιλό) / White seabream (per kilo) | 60.00
-Τσιπούρες (κιλό) / Sea Bream (per kilo) | 60.00
+Τσιπούρες (κιλό) / Gilthead sea bream (per kilo) | 60.00
 Φέτα Ξιφία (κιλό) / Swordfish Steak (per kilo) | 60.00
-Φέτα Μαγιάτικο (κιλό) / Feta-style Greater Amberjack (per kilo) | 60.00
+Φέτα Μαγιάτικο (κιλό) / Greater Amberjack steak (per kilo) | 60.00
 
 # Θαλασσινά / Seafood
 Μυδοπίλαφο / Mussel pilaf | 10.00
-Μαρίδα (μερίδα) / Fried smelt | 8.00
+Μαρίδα (μερίδα) / Fried picarel (Marida) | 8.00
 Αθερίνα (μερίδα) / Fried sand smelt | 8.00
 Παέλια / Paella | 10.00
 Γαύρος φιλέτο / Anchovy Fillet | 9.00
@@ -93,14 +92,14 @@
 Χταπόδι λιαστό / Sun-dried Octopus | 14.00
 Σουπιά τηγανητή / Fried Cuttlefish | 10.00
 Σουπιά ψητή / Grilled Cuttlefish | 10.00
-Καλαμαράκια νωπά (κιλό) / Fresh Calamari | 40.00
+Καλαμαράκια νωπά (κιλό) / Fresh calamari (per kilo) | 40.00
 Βάτος (μερίδα) / Skate | 10.00
-Μακαρονάκι καραβίδα / Crayfish pasta | 10.00
+Μακαρονάκι καραβίδα / Langoustine pasta | 10.00
 Γαρίδα (μερίδα) / Shrimp | 15.00
 Γαύρος γεμιστός (μερίδα) / Stuffed anchovies | 9.00
 Γαλέος (μερίδα) / Dogfish | 15.00
 Καλαμαράκι (μερίδα) / Calamari | 9.00
-Γούνες (κιλό) / Dried salted fish (Gounes) | 30.00
+Γούνες (κιλό) / Dried salted fish (Gounes, per kilo) | 30.00
 Μύδια σαλάτα / Mussel salad | 9.00
 Μύδια σαγανάκι / Mussels saganaki | 9.00
 Μύδια τηγανητά / Fried mussels | 9.00
@@ -137,7 +136,7 @@ Kaiser / Kaiser beer | 4.00
 Εβρίτικα Κελλάρια / Evritika Kellaria | 4.00
 
 # Κρασιά / Wines
-Χύμα / House Wine (Bulk) | 9.00
+Χύμα / House wine (from the barrel) | 9.00
 
 # Αναψυκτικά / Soft drinks
 Coca cola / Coca Cola | 2.00

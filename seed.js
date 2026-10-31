@@ -38,6 +38,11 @@ module.exports = { seed, parse };
 
 if (require.main === module) {
   const db = require('./db');
+  const existing = db.prepare('SELECT COUNT(*) n FROM items').get().n;
+  if (existing && !process.argv.includes('--yes')) {
+    console.error(`ΠΡΟΣΟΧΗ: η βάση έχει ήδη ${existing} προϊόντα και το seed θα τα ΔΙΑΓΡΑΨΕΙ όλα.\nΑν το θέλεις πραγματικά: npm run backup && npm run seed -- --yes`);
+    process.exit(1);
+  }
   seed(db, true);
   const n = db.prepare('SELECT COUNT(*) n FROM items').get().n;
   console.log(`Έγινε εισαγωγή: ${n} προϊόντα.`);

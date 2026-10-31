@@ -3,6 +3,7 @@ const QRCode = require('qrcode');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
+const zlib = require('zlib');
 const db = require('./db');
 const { seed } = require('./seed');
 const localized = require('./translations-bg-tr');
@@ -12,10 +13,19 @@ const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.dirname(process.e
 const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const SECRET = process.env.SESSION_SECRET || ADMIN_PASSWORD;
 if (!ADMIN_PASSWORD) { console.error('Λείπει η μεταβλητή ADMIN_PASSWORD'); process.exit(1); }
+// Το μυστικό των sessions ΔΕΝ παράγεται από τον κωδικό διαχείρισης. Αν λείπει το SESSION_SECRET,
+// δημιουργείται τυχαίο και αποθηκεύεται στον persistent δίσκο ώστε να μένει σταθερό μετά από restart.
+const loadSecret = () => {
+  if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
+  const f = path.join(DATA_DIR, '.session-secret');
+  try { const v = fs.readFileSync(f, 'utf8').trim(); if (v.length >= 32) return v; } catch {}
+  const v = crypto.randomBytes(48).toString('hex');
+  fs.writeFileSync(f, v, { mode: 0o600 });
+  return v;
+};
+const SECRET = loadSecret();
 if (seed(db, false)) console.log('Φορτώθηκε το αρχικό μενού από το menu-seed.txt');
-db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('name', 'Ψαροταβέρνα «Τα Μπαρμπούνια»');
 const applyInitialTranslations = db.transaction(() => {
   for (const c of db.prepare('SELECT id,name,name_bg,name_tr FROM categories').all()) {
     const t = localized.categories[c.name];
@@ -27,7 +37,14 @@ const applyInitialTranslations = db.transaction(() => {
   }
 });
 applyInitialTranslations();
-db.prepare("UPDATE items SET name_tr='Bouyiourdi' WHERE name='Μπουγιουρντί' AND name_tr='Buyурди'").run();
+// Διορθώσεις μεταφράσεων σε υπάρχουσες βάσεις: αλλάζει μόνο αν η τιμή είναι ακόμη η παλιά (δεν πατάει χειροκίνητες αλλαγές).
+db.transaction(() => {
+  const col = { en: 'name_en', bg: 'name_bg', tr: 'name_tr' };
+  for (const [el, f] of Object.entries(localized.fixes || {}))
+    for (const [lg, [oldV, newV]] of Object.entries(f))
+      db.prepare(`UPDATE items SET ${col[lg]}=? WHERE name=? AND ${col[lg]}=?`).run(newV, el, oldV);
+  db.prepare("UPDATE items SET name_tr='Bouyiourdi' WHERE name='Μπουγιουρντί' AND name_tr LIKE 'Buy%'").run();
+})();
 
 const DEF = { name: 'Ψαροταβέρνα «Τα Μπαρμπούνια»', tagline: '', tagline_en: '', tagline_bg: '', tagline_tr: '', address: '', footer: '', footer_en: '', footer_bg: '', footer_tr: '', currency: '€' };
 const getSettings = () => {
@@ -38,7 +55,7 @@ const getSettings = () => {
 const str = (v, max) => String(v ?? '').trim().slice(0, max);
 const num = v => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) && n >= 0 ? n : 0; };
 const bool = v => (v === false || v === 0 || v === '0' ? 0 : 1);
-const imageUrl = v => { const value = str(v, 1000); if (!value) return ''; try { const u = new URL(value); return ['http:', 'https:'].includes(u.protocol) ? u.href : null; } catch { return null; } };
+const imageUrl = (v, current = '') => { const value = str(v, 1000); if (!value) return ''; if (value === current) return value; try { const u = new URL(value); return u.protocol === 'https:' ? u.href : null; } catch { return null; } };
 const allergenCodes = v => { try { const a = Array.isArray(v) ? v : JSON.parse(String(v || '[]')); return JSON.stringify([...new Set(a.map(x => String(x)))].filter(x => /^(gluten|crustaceans|eggs|fish|peanuts|soybeans|milk|nuts|celery|mustard|sesame|sulphites|lupin|molluscs)$/.test(x))); } catch { return '[]'; } };
 
 function getMenu(all) {
@@ -55,9 +72,11 @@ const getCookie = (req, n) => {
   const m = (req.headers.cookie || '').split(';').map(s => s.trim()).find(s => s.startsWith(n + '='));
   return m ? decodeURIComponent(m.slice(n.length + 1)) : '';
 };
+const revoked = new Map(); // token -> λήξη (ακυρωμένα με logout)
 const authed = req => {
-  const [exp, sig] = getCookie(req, 'sid').split('.');
-  if (!exp || !sig || +exp < Date.now()) return false;
+  const tok = getCookie(req, 'sid');
+  const [exp, sig] = tok.split('.');
+  if (!exp || !sig || +exp < Date.now() || revoked.has(tok)) return false;
   const good = sign(exp);
   return sig.length === good.length && crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(good));
 };
@@ -65,13 +84,30 @@ const safeEq = (a, b) =>
   crypto.timingSafeEqual(crypto.createHash('sha256').update(a).digest(), crypto.createHash('sha256').update(b).digest());
 
 const attempts = new Map();
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, a] of attempts) if (now - a.t > 15 * 60e3) attempts.delete(k);
+  for (const [k, e] of revoked) if (e < now) revoked.delete(k);
+}, 10 * 60e3).unref();
 const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.disable('etag');
 app.use('/api', (req, res, next) => { res.set({ 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate', 'Pragma': 'no-cache', 'Expires': '0' }); next(); });
 app.use(express.json({ limit: '1mb' }));
-app.use((req, res, next) => { res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'SAMEORIGIN', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'Permissions-Policy': 'camera=(), microphone=(), geolocation=()', 'Cross-Origin-Resource-Policy': 'same-origin' }); next(); });
+app.use((req, res, next) => { res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'SAMEORIGIN', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'Permissions-Policy': 'camera=(), microphone=(), geolocation=()', 'Cross-Origin-Resource-Policy': 'same-origin',
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'" }); next(); });
+// gzip μόνο για το JSON του μενού (το μεγαλύτερο API response)
+app.use('/api/menu', (req, res, next) => {
+  if (!/\bgzip\b/.test(req.headers['accept-encoding'] || '')) return next();
+  const json = res.json.bind(res);
+  res.json = body => {
+    const buf = zlib.gzipSync(Buffer.from(JSON.stringify(body)));
+    res.set({ 'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': buf.length });
+    return res.end(buf);
+  };
+  next();
+});
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 app.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ' + baseUrl(req) + '/sitemap.xml\n'));
@@ -89,7 +125,11 @@ app.post('/api/login', (req, res) => {
   res.cookie('sid', makeToken(), { httpOnly: true, sameSite: 'lax', secure: req.secure, maxAge: 7 * 864e5 });
   res.json({ ok: true });
 });
-app.post('/api/logout', (req, res) => { res.clearCookie('sid'); res.json({ ok: true }); });
+app.post('/api/logout', (req, res) => {
+  const tok = getCookie(req, 'sid'), exp = +tok.split('.')[0];
+  if (tok && exp > Date.now()) revoked.set(tok, exp);
+  res.clearCookie('sid'); res.json({ ok: true });
+});
 
 // ---------- Δημόσιο ----------
 app.get('/api/menu', (req, res) => { res.set('Cache-Control', 'no-cache'); res.json(getMenu(false)); });
@@ -166,7 +206,7 @@ A.post('/items', (req, res) => {
   if (!name) return res.status(400).json({ error: 'Δώστε όνομα πιάτου' });
   if (!db.prepare('SELECT 1 FROM categories WHERE id=?').get(b.category_id)) return res.status(400).json({ error: 'Άκυρη κατηγορία' });
   const image = imageUrl(b.image_url);
-  if (image === null) return res.status(400).json({ error: 'Η φωτογραφία πρέπει να έχει έγκυρο URL HTTP ή HTTPS.' });
+  if (image === null) return res.status(400).json({ error: 'Η φωτογραφία πρέπει να έχει έγκυρο URL HTTPS.' });
   const sort = db.prepare('SELECT COALESCE(MAX(sort),0)+1 n FROM items WHERE category_id=?').get(b.category_id).n;
   res.json({ id: db.prepare('INSERT INTO items(category_id,name,name_en,name_bg,name_tr,description,description_en,description_bg,description_tr,price,available,sort,allergens,allergens_en,allergens_bg,allergens_tr,image_url,allergen_codes,popular) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
     .run(b.category_id, name, str(b.name_en,150), str(b.name_bg,150), str(b.name_tr,150), str(b.description,400), str(b.description_en,400), str(b.description_bg,400), str(b.description_tr,400), num(b.price), bool(b.available ?? 1), sort, str(b.allergens,300), str(b.allergens_en,300), str(b.allergens_bg,300), str(b.allergens_tr,300), image, allergenCodes(b.allergen_codes), bool(b.popular ?? 0)).lastInsertRowid });
@@ -176,8 +216,8 @@ A.put('/items/:id', (req, res) => {
   if (!it) return res.status(404).json({ error: 'Δεν βρέθηκε' });
   const b = { ...it, ...req.body }, name = str(b.name, 150);
   if (!name) return res.status(400).json({ error: 'Δώστε όνομα πιάτου' });
-  const image = imageUrl(b.image_url);
-  if (image === null) return res.status(400).json({ error: 'Η φωτογραφία πρέπει να έχει έγκυρο URL HTTP ή HTTPS.' });
+  const image = imageUrl(b.image_url, it.image_url || '');
+  if (image === null) return res.status(400).json({ error: 'Η φωτογραφία πρέπει να έχει έγκυρο URL HTTPS.' });
   db.prepare('UPDATE items SET category_id=?,name=?,name_en=?,name_bg=?,name_tr=?,description=?,description_en=?,description_bg=?,description_tr=?,price=?,available=?,allergens=?,allergens_en=?,allergens_bg=?,allergens_tr=?,image_url=?,allergen_codes=?,popular=? WHERE id=?')
     .run(b.category_id, name, str(b.name_en,150), str(b.name_bg,150), str(b.name_tr,150), str(b.description,400), str(b.description_en,400), str(b.description_bg,400), str(b.description_tr,400), num(b.price), bool(b.available), str(b.allergens,300), str(b.allergens_en,300), str(b.allergens_bg,300), str(b.allergens_tr,300), image, allergenCodes(b.allergen_codes ?? it.allergen_codes), bool(b.popular ?? it.popular), it.id);
   res.json({ ok: true });
