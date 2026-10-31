@@ -46,6 +46,11 @@ db.transaction(() => {
   db.prepare("UPDATE items SET name_tr='Bouyiourdi' WHERE name='Μπουγιουρντί' AND name_tr LIKE 'Buy%'").run();
 })();
 
+{
+  const fill = db.prepare("INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value WHERE settings.value=''");
+  const base = { tagline_bg: '40 години с изискани вкусове', tagline_tr: '40 yıldır seçkin lezzetler', footer_bg: 'Цените могат да се променят в зависимост от наличностите на пазара.', footer_tr: 'Fiyatlar piyasa koşullarına göre değişebilir.' };
+  db.transaction(() => { for (const k in base) fill.run(k, base[k]); })();
+}
 const DEF = { name: 'Ψαροταβέρνα «Τα Μπαρμπούνια»', tagline: '', tagline_en: '', tagline_bg: '', tagline_tr: '', address: '', footer: '', footer_en: '', footer_bg: '', footer_tr: '', currency: '€' };
 const getSettings = () => {
   const s = { ...DEF };
