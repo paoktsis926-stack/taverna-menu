@@ -1,0 +1,26 @@
+{
+  "name": "Κουζίνα — Παραγγελίες",
+  "short_name": "Κουζίνα",
+  "description": "Παραγγελίες σερβιτόρων προς την κουζίνα",
+  "lang": "el",
+  "start_url": "/kitchen",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f1b1f",
+  "theme_color": "#0a1417",
+  "icons": [
+    {
+      "src": "/icons/kitchen-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/kitchen-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
