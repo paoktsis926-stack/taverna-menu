@@ -27,6 +27,37 @@ body{margin:0;color:var(--ink);font:10pt/1.35 Georgia,"Times New Roman",serif;ba
 <div class="bar"><button onclick="window.print()">Εκτύπωση / Αποθήκευση PDF</button><label class="print-filter">Γλώσσα PDF <select id="print-language" aria-label="Επιλογή γλώσσας PDF"><option value="el">Ελληνικά</option><option value="en">English</option><option value="bg">Български</option><option value="tr">Türkçe</option><option value="all">Και οι 4 γλώσσες</option></select></label><label class="print-filter" id="filter-wrap" hidden>Κατηγορίες <select id="print-categories" multiple aria-label="Επιλογή κατηγοριών για εκτύπωση" title="Κράτησε πατημένο Ctrl ή Command για πολλαπλή επιλογή"><option value="*" selected>Όλες οι κατηγορίες</option></select></label><span class="hint">Στο παράθυρο εκτύπωσης: Περιθώρια «Προεπιλογή», ξετσέκαρε «Κεφαλίδες και υποσέλιδα», τσέκαρε «Γραφικά παρασκηνίου».</span><span class="warn" id="missing" hidden></span><a href="/print">Μενού</a><a href="/print?mode=qr">Κάρτα QR</a><a href="/print?mode=tents">50 Table QR Cards</a><a href="/admin">Πίσω στη διαχείριση</a></div>
 <div class="sheet" id="r"></div>
 <script>
+
+const DESIGN_FONTS=['Georgia','Arial','system-ui','Verdana','Trebuchet MS','Times New Roman','Palatino Linotype'];
+const designUrl=v=>{const x=String(v||'').trim();if(/^\/uploads\/[a-zA-Z0-9._-]+$/.test(x))return x;try{const u=new URL(x);return u.protocol==='https:'?u.href:''}catch{return ''}};
+function applyPdfDesign(raw){
+ let d;try{d=typeof raw==='string'?JSON.parse(raw):raw}catch{return}
+ if(!d||typeof d!=='object')return;
+ const c=d.colors||{},t=d.typography||{},l=d.layout||{},b=d.branding||{};
+ const color=(v,f)=>/^#[0-9a-f]{6}$/i.test(String(v||''))?v:f;
+ const font=v=>DESIGN_FONTS.includes(v)?v:'system-ui';
+ const n=(v,min,max,f)=>Number.isFinite(Number(v))?Math.min(max,Math.max(min,Number(v))):f;
+ const cover=designUrl(b.coverUrl),background=designUrl(b.backgroundUrl);
+ const css=
+ ':root{--sea:'+color(c.primary,'#103c46')+';--gold:'+color(c.accent,'#d7ad63')+';--ink:'+color(c.text,'#19353a')+';--muted:'+color(c.muted,'#657371')+';--pdf-card:'+color(c.card,'#fffefa')+'}'+
+ '@page{size:A4;margin:'+n(l.marginTop,4,25,12)+'mm '+n(l.marginSide,4,25,12)+'mm '+n(l.marginBottom,4,25,14)+'mm}'+
+ 'body{background-color:'+color(c.background,'#fff')+';color:var(--ink);font-family:'+font(t.bodyFont)+';font-size:'+n(t.bodySize,6,24,10)+'pt}'+
+ '.sheet{background-color:var(--pdf-card);border:'+n(l.borderWidth,0,4,0)+'pt solid '+color(c.accent,'#d7ad63')+';'+(background?'background-image:url("'+background+'");background-size:cover;background-position:center;':'')+'}'+
+ '.top{'+(cover?'background-image:linear-gradient(#ffffffd9,#ffffffd9),url("'+cover+'");background-size:cover;background-position:center;':'')+'}'+
+ '.top h1{font-family:'+font(t.headingFont)+';font-size:'+n(t.headingSize,12,56,30)+'pt;color:var(--sea)}'+
+ '.cat h2{font-family:'+font(t.headingFont)+';font-size:'+n(t.categorySize,8,28,13)+'pt;color:var(--sea)}'+
+ '.cols{column-count:'+n(l.columns,1,3,2)+';column-gap:'+n(l.columnGap,2,24,10)+'mm}'+
+ '.it{margin-bottom:'+n(l.itemGap,.5,8,2.3)+'mm}'+
+ '.row,.ds,.en,.foot{font-family:'+font(t.bodyFont)+'}'+
+ '.designer-pdf-logo{display:block;max-width:45mm;max-height:24mm;object-fit:contain;margin:0 auto 2mm}'+
+ '@media print{body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.sheet{background-color:var(--pdf-card)}}';
+ let style=document.getElementById('designer-pdf-style');if(!style){style=document.createElement('style');style.id='designer-pdf-style';document.head.appendChild(style)}style.textContent=css;
+ const top=document.querySelector('.top')||document.querySelector('.poster');
+ if(top){let logo=document.getElementById('designer-pdf-logo');const src=designUrl(b.logoUrl);if(src){if(!logo){logo=document.createElement('img');logo.id='designer-pdf-logo';logo.className='designer-pdf-logo';logo.alt='Λογότυπο';top.prepend(logo)}logo.src=src}else if(logo)logo.remove()}
+}
+window.addEventListener('message',e=>{if(e.origin===location.origin&&e.data?.type==='taverna-design-preview'&&e.data.designType==='pdf')applyPdfDesign(e.data.design)});
+window.parent!==window&&window.parent.postMessage({type:'taverna-design-ready'},location.origin);
+
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const HERITAGE={"el":"40 χρόνια με εκλεκτές γεύσεις στη Μάκρη Έβρου, δίπλα στο κύμα, τιμούμε την παράδοση και τη θάλασσα με αγάπη και μεράκι.","en":"For 40 years, with exceptional flavors in Makri, Evros, right by the sea, we have honored tradition and the sea with love and passion.","bg":"Вече 40 години предлагаме изискани вкусове в Макри, Еврос, край морския бряг, като с любов и старание почитаме традицията и морето.","tr":"40 yıldır Evros'un Makri kasabasında, denizin hemen kıyısında, seçkin lezzetlerimizle geleneğe ve denize sevgi ve özveriyle değer veriyoruz."};
 const ALLERGENS={gluten:['Δημητριακά με γλουτένη','Cereals containing gluten','Зърнени култури с глутен','Gluten içeren tahıllar'],crustaceans:['Καρκινοειδή','Crustaceans','Ракообразни','Kabuklular'],eggs:['Αυγά','Eggs','Яйца','Yumurta'],fish:['Ψάρια','Fish','Риба','Balık'],peanuts:['Αραχίδες','Peanuts','Фъстъци','Yer fıstığı'],soybeans:['Σόγια','Soybeans','Соя','Soya'],milk:['Γάλα','Milk','Мляко','Süt'],nuts:['Καρποί με κέλυφος','Tree nuts','Ядки','Sert kabuklu yemişler'],celery:['Σέλινο','Celery','Целина','Kereviz'],mustard:['Μουστάρδα','Mustard','Горчица','Hardal'],sesame:['Σησάμι','Sesame','Сусам','Susam'],sulphites:['Διοξείδιο θείου / θειώδη','Sulphites','Сулфити','Sülfitler'],lupin:['Λούπινο','Lupin','Лупина','Acı bakla'],molluscs:['Μαλάκια','Molluscs','Мекотели','Yumuşakçalar']};
@@ -39,6 +70,7 @@ const languagePicker=document.querySelector('#print-language');
 if(languagePicker) languagePicker.value=validLang;
 const value=(obj,key,lang)=>lang==='el'?(obj[key]||''):(obj[key+'_'+lang]||obj[key+'_en']||obj[key]||'');
 fetch('/api/menu',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json()}).then(({settings:s,categories:cs})=>{
+ applyPdfDesign(s.pdf_design);
  document.title=s.name+' — Εκτύπωση PDF';
  const numMap={};{let n=0;cs.forEach(c=>c.items.forEach(i=>{numMap[i.id]=++n}))}
  const LN=s.layout_numbers==='1',LB=s.layout_bilingual==='1';
