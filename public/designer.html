@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>Σχεδιασμός καταλόγου</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#19353a;background:#f4f3ed}
+*{box-sizing:border-box}body{margin:0;padding:14px}.tabs,.toolbar,.actions,.device{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button,select,input{font:inherit}button{border:1px solid #d5ddd8;border-radius:9px;background:#fffefa;color:#103c46;padding:9px 12px;cursor:pointer}button.primary{background:#103c46;color:#fff;border-color:#103c46}button:disabled{opacity:.4;cursor:not-allowed}
+.tabs button.active,.device button.active{background:#103c46;color:#fff}
+.layout{display:grid;grid-template-columns:minmax(290px,430px) minmax(0,1fr);gap:14px;margin-top:12px;align-items:start}
+.panel{background:#fffefa;border:1px solid #e1e3db;border-radius:13px;padding:14px;min-width:0}
+.toolbar{justify-content:space-between;margin:10px 0}.toolbar select{max-width:230px}
+h1{font:700 24px Georgia,serif;margin:0 0 5px;color:#103c46}h2{font:700 18px Georgia,serif;margin:0 0 12px}
+p.note{font-size:12px;color:#697a79;margin:4px 0 10px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.field{min-width:0}.field.full{grid-column:1/-1}.field label{display:block;font-size:12px;font-weight:700;margin:0 0 4px;color:#506563}
+.field input,.field select{width:100%;min-width:0;border:1px solid #dce1da;border-radius:8px;padding:8px;background:#fff;color:#19353a}
+.field input[type=color]{height:40px;padding:3px}.field input[type=range]{padding:0}
+.actions{margin-top:12px}.status{font-size:12px;min-height:18px;color:#2f7d57;margin-top:8px}
+.preview-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.preview-wrap{margin:auto;max-width:100%;transition:width .15s ease}.preview-wrap iframe{width:100%;height:780px;border:1px solid #dce1da;border-radius:10px;background:#fff}
+.dirty{font-size:12px;color:#a64232;font-weight:700}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.preview-wrap iframe{height:650px}}
+@media(max-width:480px){body{padding:8px}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}.panel{padding:11px}}
+</style>
+</head>
+<body>
+<h1>Σχεδιασμός Ψηφιακού Καταλόγου και PDF</h1>
+<p class="note">Οι αλλαγές εμφανίζονται στην προεπισκόπηση. Αποθηκεύονται μόνο όταν πατήσεις «ΑΠΟΘΗΚΕΥΣΗ».</p>
+<div class="tabs" role="tablist">
+<button type="button" data-type="digital" class="active">Ψηφιακός Κατάλογος</button>
+<button type="button" data-type="pdf">PDF Κατάλογος</button>
+</div>
+<div class="layout">
+<section class="panel">
+<div class="toolbar">
+<div class="device" id="device-tools"><button type="button" data-device="mobile">Κινητό</button><button type="button" data-device="tablet">Tablet</button><button type="button" data-device="desktop" class="active">Desktop</button></div>
+<select id="template-select" aria-label="Έτοιμο πρότυπο"><option value="">Επιλογή προτύπου…</option></select>
+</div>
+<div id="fields"></div>
+<div class="actions">
+<button type="button" id="undo">Αναίρεση</button><button type="button" id="redo">Επαναφορά</button><button type="button" id="restore">Επαναφορά αποθηκευμένων</button>
+</div>
+<div class="actions">
+<button type="button" id="preview">ΠΡΟΕΠΙΣΚΟΠΗΣΗ</button>
+<button type="button" id="save" class="primary">ΑΠΟΘΗΚΕΥΣΗ</button>
+<button type="button" id="save-template">ΑΠΟΘΗΚΕΥΣΗ ΩΣ TEMPLATE</button>
+</div>
+<div id="status" class="status" role="status"></div>
+</section>
+<section class="panel">
+<div class="preview-head"><h2>Προεπισκόπηση</h2><span id="dirty" class="dirty"></span></div>
+<div id="preview-wrap" class="preview-wrap"><iframe id="preview-frame" title="Προεπισκόπηση καταλόγου"></iframe></div>
+</section>
+</div>
+<script>
+'use strict';
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const clone=x=>JSON.parse(JSON.stringify(x));
+const defaults={
+ digital:{
+  colors:{primary:'#103c46',accent:'#d7ad63',background:'#f6f4ee',card:'#fffefa',text:'#19353a',muted:'#697a79'},
+  typography:{headingFont:'Georgia',bodyFont:'system-ui',headingSize:30,bodySize:16},
+  layout:{frameWidth:1080,columns:2,cardRadius:16,cardPadding:15,cardGap:14,borderWidth:1},
+  photos:{width:124,height:124,fit:'cover',radius:12},
+  branding:{logoUrl:'',backgroundUrl:'',coverUrl:''},
+  devices:{mobile:{columns:1,cardGap:9,cardPadding:12,fontSize:15,photoWidth:96,photoHeight:96},tablet:{columns:2,cardGap:12,cardPadding:14,fontSize:16,photoWidth:112,photoHeight:112},desktop:{columns:2,cardGap:14,cardPadding:15,fontSize:16,photoWidth:124,photoHeight:124}}
+ },
+ pdf:{
+  colors:{primary:'#103c46',accent:'#d7ad63',background:'#ffffff',card:'#fffefa',text:'#19353a',muted:'#657371'},
+  typography:{headingFont:'Georgia',bodyFont:'system-ui',headingSize:30,bodySize:10,categorySize:13},
+  layout:{pageSize:'A4',marginTop:12,marginSide:12,marginBottom:14,columns:2,columnGap:10,itemGap:2.3,borderWidth:0},
+  branding:{logoUrl:'',backgroundUrl:'',coverUrl:''}
+ }
+};
+const presets={
+ digital:[
+  {id:'digital-premium',name:'Premium Θαλασσινό',design:{colors:{primary:'#103c46',accent:'#d7ad63',background:'#f6f4ee',card:'#fffefa',text:'#19353a',muted:'#697a79'},typography:{headingFont:'Georgia',bodyFont:'system-ui',headingSize:32,bodySize:16},layout:{frameWidth:1080,columns:2,cardRadius:18,cardPadding:16,cardGap:14,borderWidth:1},photos:{width:124,height:124,fit:'cover',radius:12}}},
+  {id:'digital-classic',name:'Κλασικό',design:{colors:{primary:'#4b3527',accent:'#b18a50',background:'#f5f0e7',card:'#fffdf8',text:'#30251e',muted:'#786b60'},typography:{headingFont:'Palatino Linotype',bodyFont:'Georgia',headingSize:30,bodySize:16},layout:{frameWidth:1000,columns:2,cardRadius:6,cardPadding:14,cardGap:12,borderWidth:1},photos:{width:116,height:116,fit:'cover',radius:4}}},
+  {id:'digital-minimal',name:'Minimal',design:{colors:{primary:'#263238',accent:'#78909c',background:'#ffffff',card:'#ffffff',text:'#263238',muted:'#607d8b'},typography:{headingFont:'Arial',bodyFont:'Arial',headingSize:28,bodySize:15},layout:{frameWidth:1040,columns:2,cardRadius:4,cardPadding:12,cardGap:10,borderWidth:1},photos:{width:108,height:108,fit:'contain',radius:2}}}
+ ],
+ pdf:[
+  {id:'pdf-premium',name:'Premium Θαλασσινό',design:{colors:{primary:'#103c46',accent:'#d7ad63',background:'#ffffff',card:'#fffefa',text:'#19353a',muted:'#657371'},typography:{headingFont:'Georgia',bodyFont:'system-ui',headingSize:30,bodySize:10,categorySize:13},layout:{pageSize:'A4',marginTop:12,marginSide:12,marginBottom:14,columns:2,columnGap:10,itemGap:2.3,borderWidth:0}}},
+  {id:'pdf-classic',name:'Κλασικό',design:{colors:{primary:'#4b3527',accent:'#b18a50',background:'#ffffff',card:'#fffdf8',text:'#30251e',muted:'#786b60'},typography:{headingFont:'Palatino Linotype',bodyFont:'Georgia',headingSize:29,bodySize:10,categorySize:13},layout:{pageSize:'A4',marginTop:15,marginSide:14,marginBottom:16,columns:2,columnGap:9,itemGap:2.5,borderWidth:0}}},
+  {id:'pdf-clean',name:'Καθαρό Μοντέρνο',design:{colors:{primary:'#263238',accent:'#78909c',background:'#ffffff',card:'#ffffff',text:'#263238',muted:'#607d8b'},typography:{headingFont:'Arial',bodyFont:'Arial',headingSize:28,bodySize:9,categorySize:12},layout:{pageSize:'A4',marginTop:10,marginSide:10,marginBottom:12,columns:2,columnGap:8,itemGap:1.8,borderWidth:0}}}
+ ]
+};
+const field=(label,path,type='number',opts={})=>({label,path,type,...opts});
+const common=[
+ field('Κύριο χρώμα','colors.primary','color'),field('Χρώμα έμφασης','colors.accent','color'),
+ field('Φόντο','colors.background','color'),field('Φόντο καρτών','colors.card','color'),
+ field('Χρώμα κειμένου','colors.text','color'),field('Δευτερεύον κείμενο','colors.muted','color'),
+ field('Γραμματοσειρά τίτλων','typography.headingFont','select',{options:['Georgia','Palatino Linotype','Times New Roman','Arial','Verdana','Trebuchet MS','system-ui']}),
+ field('Γραμματοσειρά κειμένου','typography.bodyFont','select',{options:['system-ui','Arial','Verdana','Trebuchet MS','Georgia','Times New Roman','Palatino Linotype']}),
+ field('Μέγεθος τίτλων (px ή pt)','typography.headingSize','number',{min:12,max:56,step:1}),
+ field('Μέγεθος βασικού κειμένου','typography.bodySize','number',{min:6,max:24,step:1})
+];
+const digitalFields=[
+ ...common,
+ field('Μέγιστο πλάτος περιεχομένου (px)','layout.frameWidth','number',{min:320,max:1600,step:10}),
+ field('Στήλες περιεχομένου','layout.columns','select',{options:['1','2','3']}),
+ field('Στρογγύλεμα καρτών (px)','layout.cardRadius','number',{min:0,max:36}),
+ field('Εσωτερικό περιθώριο κάρτας (px)','layout.cardPadding','number',{min:4,max:32}),
+ field('Απόσταση καρτών (px)','layout.cardGap','number',{min:0,max:32}),
+ field('Πάχος περιγράμματος (px)','layout.borderWidth','number',{min:0,max:4,step:.5}),
+ field('Πλάτος φωτογραφίας (px)','photos.width','number',{min:48,max:320}),
+ field('Ύψος φωτογραφίας (px)','photos.height','number',{min:48,max:320}),
+ field('Τρόπος εμφάνισης φωτογραφίας','photos.fit','select',{options:['cover','contain','fill']}),
+ field('Στρογγύλεμα φωτογραφίας (px)','photos.radius','number',{min:0,max:100}),
+ field('URL λογοτύπου','branding.logoUrl','url',{full:true}),
+ field('URL φόντου','branding.backgroundUrl','url',{full:true}),
+ field('URL εξωφύλλου','branding.coverUrl','url',{full:true})
+];
+const pdfFields=[
+ ...common.filter(x=>x.path!=='typography.bodySize'),
+ field('Μέγεθος κειμένου PDF (pt)','typography.bodySize','number',{min:6,max:24}),
+ field('Μέγεθος τίτλων κατηγορίας (pt)','typography.categorySize','number',{min:8,max:28}),
+ field('Πάνω περιθώριο σελίδας (mm)','layout.marginTop','number',{min:4,max:25}),
+ field('Πλευρικά περιθώρια (mm)','layout.marginSide','number',{min:4,max:25}),
+ field('Κάτω περιθώριο (mm)','layout.marginBottom','number',{min:4,max:25}),
+ field('Στήλες PDF','layout.columns','select',{options:['1','2','3']}),
+ field('Απόσταση στηλών (mm)','layout.columnGap','number',{min:2,max:24,step:.5}),
+ field('Απόσταση πιάτων (mm)','layout.itemGap','number',{min:.5,max:8,step:.1}),
+ field('Πάχος περιγράμματος (pt)','layout.borderWidth','number',{min:0,max:4,step:.5}),
+ field('URL λογοτύπου','branding.logoUrl','url',{full:true}),
+ field('URL φόντου','branding.backgroundUrl','url',{full:true}),
+ field('URL εξωφύλλου','branding.coverUrl','url',{full:true})
+];
+const deviceFields=[
+ field('Στήλες στη συσκευή','columns','select',{options:['1','2','3']}),
+ field('Μέγεθος κειμένου (px)','fontSize','number',{min:11,max:24}),
+ field('Απόσταση καρτών (px)','cardGap','number',{min:0,max:32}),
+ field('Εσωτερικό περιθώριο κάρτας (px)','cardPadding','number',{min:4,max:32}),
+ field('Πλάτος φωτογραφίας (px)','photoWidth','number',{min:48,max:320}),
+ field('Ύψος φωτογραφίας (px)','photoHeight','number',{min:48,max:320})
+];
+let type='digital',device='desktop',state=null,saved=null,templates=[],undoStack=[],redoStack=[];
+const keyFor=t=>t==='digital'?'digital_design':'pdf_design';
+const parse=(v,f)=>{try{return typeof v==='string'?JSON.parse(v):clone(v)}catch{return clone(f)}};
+const get=(obj,path)=>path.split('.').reduce((a,k)=>a?.[k],obj);
+const set=(obj,path,value)=>{const keys=path.split('.');let x=obj;for(const k of keys.slice(0,-1))x=x[k];x[keys.at(-1)]=value};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function api(path,method='GET',body){const r=await fetch('/api/admin'+path,{method,headers:{'Content-Type':'application/json'},cache:'no-store',body:body?JSON.stringify(body):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Σφάλμα σύνδεσης');return j}
+function currentDesign(){return state[type]}
+function markDirty(){const dirty=JSON.stringify(currentDesign())!==JSON.stringify(saved[type]);$('#dirty').textContent=dirty?'Μη αποθηκευμένες αλλαγές':'';$('#undo').disabled=!undoStack.length;$('#redo').disabled=!redoStack.length}
+function snapshot(){undoStack.push(clone(currentDesign()));if(undoStack.length>60)undoStack.shift();redoStack=[];markDirty()}
+function updatePreview(){const frame=$('#preview-frame');try{frame.contentWindow.postMessage({type:'taverna-design-preview',designType:type,design:currentDesign()},location.origin)}catch{}}
+function setPreviewMode(){const wrap=$('#preview-wrap');wrap.style.width=type==='pdf'?'100%':device==='mobile'?'390px':device==='tablet'?'768px':'100%';$('#device-tools').hidden=type==='pdf';const frame=$('#preview-frame');const src=type==='pdf'?'/print?designerPreview=1':'/?designerPreview=1';if(frame.dataset.src!==src){frame.dataset.src=src;frame.src=src}else updatePreview()}
+function renderFields(){
+ const fields=type==='digital'?digitalFields:pdfFields;
+ const make=f=>{const v=get(currentDesign(),type==='digital'&&device!=='desktop'&&f.path.startsWith('layout.')?f.path:f.path);let control='';
+  if(f.type==='select')control='<select data-path="'+f.path+'">'+f.options.map(o=>'<option value="'+esc(o)+'"'+(String(v)===String(o)?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
+  else control='<input data-path="'+f.path+'" type="'+f.type+'" value="'+esc(v??'')+'" '+(f.min!==undefined?'min="'+f.min+'"':'')+' '+(f.max!==undefined?'max="'+f.max+'"':'')+' '+(f.step!==undefined?'step="'+f.step+'"':'')+'>';
+  return '<div class="field '+(f.full?'full':'')+'"><label>'+f.label+'</label>'+control+'</div>'};
+ let html='<div class="fields">'+fields.map(make).join('')+'</div>';
+ if(type==='digital'){
+  html+='<h2 style="margin-top:18px">Ρυθμίσεις ανά συσκευή: '+({mobile:'Κινητό',tablet:'Tablet',desktop:'Desktop'}[device])+'</h2><div class="fields">'+deviceFields.map(f=>{const v=currentDesign().devices[device][f.path];const control=f.type==='select'?'<select data-device-path="'+f.path+'">'+f.options.map(o=>'<option value="'+o+'"'+(String(v)===String(o)?' selected':'')+'>'+o+'</option>').join('')+'</select>':'<input type="number" data-device-path="'+f.path+'" value="'+esc(v)+'" min="'+f.min+'" max="'+f.max+'" step="'+(f.step||1)+'">';return '<div class="field"><label>'+f.label+'</label>'+control+'</div>'}).join('')+'</div>';
+ }
+ $('#fields').innerHTML=html;
+}
+function renderTemplateOptions(){
+ const list=[...presets[type],...templates.filter(t=>t.type===type)];
+ $('#template-select').innerHTML='<option value="">Επιλογή προτύπου…</option>'+list.map(t=>'<option value="'+esc(t.id)+'">'+esc(t.name)+'</option>').join('');
+}
+function applyTemplate(id){
+ const t=[...presets[type],...templates.filter(x=>x.type===type)].find(x=>x.id===id);if(!t)return;
+ snapshot();state[type]=merge(clone(defaults[type]),t.design);renderFields();updatePreview();markDirty();
+}
+function merge(base,source){for(const k of Object.keys(source||{})){if(source[k]&&typeof source[k]==='object'&&!Array.isArray(source[k]))base[k]=merge(base[k]||{},source[k]);else base[k]=source[k]}return base}
+function switchType(next){if(next===type)return;type=next;undoStack=[];redoStack=[];$$('[data-type]').forEach(b=>b.classList.toggle('active',b.dataset.type===type));renderTemplateOptions();renderFields();setPreviewMode();markDirty()}
+function switchDevice(next){device=next;$$('[data-device]').forEach(b=>b.classList.toggle('active',b.dataset.device===device));renderFields();setPreviewMode()}
+$('#fields').addEventListener('change',e=>{
+ const input=e.target.closest('[data-path],[data-device-path]');if(!input)return;
+ const isDevice=input.hasAttribute('data-device-path'),path=isDevice?input.dataset.devicePath:input.dataset.path;
+ snapshot();const value=input.type==='number'?Number(input.value):input.value;
+ if(isDevice)state.digital.devices[device][path]=value;else set(currentDesign(),path,value);
+ updatePreview();markDirty();
+});
+$('#fields').addEventListener('input',e=>{if(e.target.matches('input[type=url]')){const input=e.target;snapshot();set(currentDesign(),input.dataset.path,input.value);updatePreview();markDirty()}});
+$('#template-select').addEventListener('change',e=>{if(e.target.value)applyTemplate(e.target.value);e.target.value=''});
+$$('[data-type]').forEach(b=>b.addEventListener('click',()=>switchType(b.dataset.type)));
+$$('[data-device]').forEach(b=>b.addEventListener('click',()=>switchDevice(b.dataset.device)));
+$('#undo').onclick=()=>{if(!undoStack.length)return;redoStack.push(clone(currentDesign()));state[type]=undoStack.pop();renderFields();updatePreview();markDirty()};
+$('#redo').onclick=()=>{if(!redoStack.length)return;undoStack.push(clone(currentDesign()));state[type]=redoStack.pop();renderFields();updatePreview();markDirty()};
+$('#restore').onclick=()=>{if(!confirm('Επαναφορά της τελευταίας αποθηκευμένης σχεδίασης;'))return;snapshot();state[type]=clone(saved[type]);renderFields();updatePreview();markDirty()};
+$('#preview').onclick=()=>{const frame=$('#preview-frame');try{frame.contentWindow.location.reload()}catch{}};
+$('#preview-frame').addEventListener('load',()=>setTimeout(updatePreview,350));
+$('#save').onclick=async()=>{
+ const btn=$('#save');btn.disabled=true;$('#status').textContent='Αποθήκευση…';
+ try{const r=await api('/design/'+type,'PUT',{design:currentDesign()});state[type]=clone(r.design);saved[type]=clone(r.design);undoStack=[];redoStack=[];$('#status').textContent='Αποθηκεύτηκε με επιτυχία.';updatePreview();markDirty()}
+ catch(e){$('#status').textContent=e.message;$('#status').style.color='#a64232'}finally{btn.disabled=false}
+};
+$('#save-template').onclick=async()=>{
+ const name=prompt('Όνομα για το νέο template:');if(!name?.trim())return;
+ const all=[...templates,{id:'custom-'+Date.now(),name:name.trim(),type,design:clone(currentDesign())}];
+ try{const r=await api('/design-templates','PUT',{templates:all});templates=r.templates;renderTemplateOptions();$('#status').textContent='Το template αποθηκεύτηκε.'}
+ catch(e){$('#status').textContent=e.message;$('#status').style.color='#a64232'}
+};
+window.addEventListener('message',e=>{if(e.origin!==location.origin||e.data?.type!=='taverna-design-ready')return;updatePreview()});
+window.addEventListener('beforeunload',e=>{if(JSON.stringify(currentDesign())!==JSON.stringify(saved[type])){e.preventDefault();e.returnValue=''}});
+
+(async()=>{
+ try{
+  const data=await api('/menu');
+  state={digital:parse(data.settings.digital_design,defaults.digital),pdf:parse(data.settings.pdf_design,defaults.pdf)};
+  saved=clone(state);templates=parse(data.settings.design_templates,[]);
+  renderTemplateOptions();renderFields();setPreviewMode();markDirty();
+ }catch(e){$('#status').textContent=e.message;$('#status').style.color='#a64232'}
+})();
+</script>
+</body></html>
