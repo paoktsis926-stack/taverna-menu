@@ -75,7 +75,7 @@ fetch('/api/menu',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.j
  const numMap={};{let n=0;cs.forEach(c=>c.items.forEach(i=>{numMap[i.id]=++n}))}
  const LN=s.layout_numbers==='1',LB=s.layout_bilingual==='1';
  if(!mode){cs=cs.map(c=>({...c,items:c.items.filter(i=>i.available)})).filter(c=>c.items.length)}
- if(mode==='qr'){r.innerHTML='<div class="poster"><h1>'+esc(s.name)+'</h1><img src="/qr.svg" alt="QR code"><p>Σκανάρετε για το μενού<br><i>Scan for the menu</i><br><i>Сканирайте за менюто</i><br><i>Menüyü görüntülemek için tarayın</i></p></div>';return}
+ if(mode==='qr'){r.innerHTML='<div class="poster"><h1>'+esc(s.name)+'</h1><img src="/qr.svg" alt="QR code"><p>Σκανάρετε για το μενού<br><i>Scan for the menu</i><br><i>Сканирайте за менюто</i><br><i>Menüyü görüntülemek için tarayın</i></p></div>';applyPdfDesign(s.pdf_design);return}
  if(mode==='tents'){
    const total=50,perPage=10,pages=Math.ceil(total/perPage);
    const sheets=Array.from({length:pages},(_,page)=>{
@@ -101,6 +101,8 @@ fetch('/api/menu',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.j
    return '<section class="sheet" data-language="'+lang+'"><div class="top"><div class="eyebrow">'+esc(L.menu)+'</div><h1>'+esc(s.name)+'</h1><p>'+esc(tagline)+'</p><div class="ad">'+esc(s.address)+'</div></div><div class="cols">'+content+'</div><div class="foot"><img src="/qr.svg" alt="QR code"><div><b>'+esc(L.menu)+'</b><br>'+esc(footer)+'</div></div><p class="heritage-line">'+esc(HERITAGE[lang]||HERITAGE.el)+'</p></section>';
  };
  r.innerHTML=langs.map(menuHtml).join('');
+ applyPdfDesign(s.pdf_design);
+ window.parent!==window&&window.parent.postMessage({type:'taverna-design-ready'},location.origin);
  const picker=document.querySelector('#print-categories');
  if(picker){
    const labels=cs.map((cat,index)=>'<option value="'+index+'">'+esc(value(cat,'name','el'))+'</option>').join('');
