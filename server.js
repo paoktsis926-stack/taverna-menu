@@ -7,6 +7,7 @@ const zlib = require('zlib');
 const db = require('./db');
 const { seed } = require('./seed');
 const localized = require('./translations-bg-tr');
+const { DIGITAL_DEFAULT, PDF_DEFAULT, normalizeDesign } = require('./design');
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.dirname(process.env.DB_PATH || path.join(__dirname, 'data', 'menu.db'));
@@ -60,6 +61,9 @@ const DEF = { ...LAYOUT_DEF, name: 'Ψαροταβέρνα «Τα Μπαρμπο
 const getSettings = () => {
   const s = { ...DEF };
   db.prepare('SELECT * FROM settings').all().forEach(r => (s[r.key] = r.value));
+  s.digital_design ||= JSON.stringify(DIGITAL_DEFAULT);
+  s.pdf_design ||= JSON.stringify(PDF_DEFAULT);
+  s.design_templates ||= '[]';
   return s;
 };
 const str = (v, max) => String(v ?? '').trim().slice(0, max);
@@ -172,6 +176,27 @@ const A = express.Router();
 A.use((req, res, next) => (authed(req) ? next() : res.status(401).json({ error: 'Απαιτείται σύνδεση' })));
 
 A.get('/menu', (req, res) => res.json(getMenu(true)));
+
+A.put('/design/:type', (req, res) => {
+  const type = req.params.type;
+  if (!['digital','pdf'].includes(type)) return res.status(404).json({ error: 'Άγνωστος σχεδιασμός.' });
+  const design = normalizeDesign(type, req.body?.design);
+  const key = type === 'digital' ? 'digital_design' : 'pdf_design';
+  db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run(key, JSON.stringify(design));
+  res.json({ ok: true, design });
+});
+
+A.put('/design-templates', (req, res) => {
+  const list = Array.isArray(req.body?.templates) ? req.body.templates.slice(0, 30) : [];
+  const clean = list.map(t => {
+    const type = t?.type === 'pdf' ? 'pdf' : 'digital';
+    const name = str(t?.name, 50);
+    if (!name) return null;
+    return { id: str(t?.id, 60) || crypto.randomBytes(8).toString('hex'), name, type, design: normalizeDesign(type, t?.design) };
+  }).filter(Boolean);
+  db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('design_templates', JSON.stringify(clean));
+  res.json({ ok: true, templates: clean });
+});
 A.post('/upload-image', express.raw({ type: 'application/octet-stream', limit: '8mb' }), (req, res) => {
   const b = req.body;
   if (!Buffer.isBuffer(b) || !b.length) return res.status(400).json({ error: 'Επιλέξτε φωτογραφία.' });
