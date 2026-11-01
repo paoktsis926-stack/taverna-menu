@@ -60,16 +60,16 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const clone=x=>JSON.parse(JSON.stringify(x));
 const defaults={
  digital:{
-  colors:{primary:'#103c46',accent:'#d7ad63',background:'#f6f4ee',card:'#fffefa',text:'#19353a',muted:'#697a79'},
-  typography:{headingFont:'Georgia',bodyFont:'system-ui',headingSize:30,bodySize:16},
-  layout:{frameWidth:1080,columns:2,cardRadius:16,cardPadding:15,cardGap:14,borderWidth:1},
-  photos:{width:124,height:124,fit:'cover',radius:12},
+  colors:{primary:'#103c46',accent:'#d7ad63',background:'#f6f4ee',card:'#fffefa',text:'#19353a',muted:'#697a79',border:'#e4e2d8'},
+  typography:{headingFont:'Georgia',bodyFont:'system-ui',headingSize:30,bodySize:16,headingWeight:700,bodyWeight:400,textAlign:'left'},
+  layout:{frameWidth:1080,columns:2,cardRadius:16,cardPadding:15,cardGap:14,borderWidth:1,cardShadow:'soft'},
+  photos:{width:124,height:124,fit:'cover',position:'center',radius:12},
   branding:{logoUrl:'',backgroundUrl:'',coverUrl:''},
   devices:{mobile:{columns:1,cardGap:9,cardPadding:12,fontSize:15,photoWidth:96,photoHeight:96},tablet:{columns:2,cardGap:12,cardPadding:14,fontSize:16,photoWidth:112,photoHeight:112},desktop:{columns:2,cardGap:14,cardPadding:15,fontSize:16,photoWidth:124,photoHeight:124}}
  },
  pdf:{
-  colors:{primary:'#103c46',accent:'#d7ad63',background:'#ffffff',card:'#fffefa',text:'#19353a',muted:'#657371'},
-  typography:{headingFont:'Georgia',bodyFont:'system-ui',headingSize:30,bodySize:10,categorySize:13},
+  colors:{primary:'#103c46',accent:'#d7ad63',background:'#ffffff',card:'#fffefa',text:'#19353a',muted:'#657371',border:'#dddddd'},
+  typography:{headingFont:'Georgia',bodyFont:'system-ui',headingSize:30,bodySize:10,categorySize:13,headingWeight:700,bodyWeight:400,textAlign:'left'},
   layout:{pageSize:'A4',marginTop:12,marginSide:12,marginBottom:14,columns:2,columnGap:10,itemGap:2.3,borderWidth:0},
   branding:{logoUrl:'',backgroundUrl:'',coverUrl:''}
  }
@@ -90,11 +90,11 @@ const field=(label,path,type='number',opts={})=>({label,path,type,...opts});
 const common=[
  field('Κύριο χρώμα','colors.primary','color'),field('Χρώμα έμφασης','colors.accent','color'),
  field('Φόντο','colors.background','color'),field('Φόντο καρτών','colors.card','color'),
- field('Χρώμα κειμένου','colors.text','color'),field('Δευτερεύον κείμενο','colors.muted','color'),
+ field('Χρώμα κειμένου','colors.text','color'),field('Δευτερεύον κείμενο','colors.muted','color'),field('Χρώμα περιγραμμάτων','colors.border','color'),
  field('Γραμματοσειρά τίτλων','typography.headingFont','select',{options:['Georgia','Palatino Linotype','Times New Roman','Arial','Verdana','Trebuchet MS','system-ui']}),
  field('Γραμματοσειρά κειμένου','typography.bodyFont','select',{options:['system-ui','Arial','Verdana','Trebuchet MS','Georgia','Times New Roman','Palatino Linotype']}),
  field('Μέγεθος τίτλων (px ή pt)','typography.headingSize','number',{min:12,max:56,step:1}),
- field('Μέγεθος βασικού κειμένου','typography.bodySize','number',{min:6,max:24,step:1})
+ field('Μέγεθος βασικού κειμένου','typography.bodySize','number',{min:6,max:24,step:1}),\n field('Πάχος τίτλων','typography.headingWeight','select',{options:['400','500','600','700','800']}),\n field('Πάχος κειμένου','typography.bodyWeight','select',{options:['400','500','600','700','800']}),\n field('Στοίχιση κειμένου','typography.textAlign','select',{options:['left','center','right']})
 ];
 const digitalFields=[
  ...common,
@@ -103,10 +103,10 @@ const digitalFields=[
  field('Στρογγύλεμα καρτών (px)','layout.cardRadius','number',{min:0,max:36}),
  field('Εσωτερικό περιθώριο κάρτας (px)','layout.cardPadding','number',{min:4,max:32}),
  field('Απόσταση καρτών (px)','layout.cardGap','number',{min:0,max:32}),
- field('Πάχος περιγράμματος (px)','layout.borderWidth','number',{min:0,max:4,step:.5}),
+ field('Πάχος περιγράμματος (px)','layout.borderWidth','number',{min:0,max:4,step:.5}),\n field('Σκιά κάρτας','layout.cardShadow','select',{options:['none','soft','strong']}),
  field('Πλάτος φωτογραφίας (px)','photos.width','number',{min:48,max:320}),
  field('Ύψος φωτογραφίας (px)','photos.height','number',{min:48,max:320}),
- field('Τρόπος εμφάνισης φωτογραφίας','photos.fit','select',{options:['cover','contain','fill']}),
+ field('Τρόπος εμφάνισης φωτογραφίας','photos.fit','select',{options:['cover','contain','fill']}),\n field('Θέση περικοπής φωτογραφίας','photos.position','select',{options:['center','top','bottom','left','right']}),
  field('Στρογγύλεμα φωτογραφίας (px)','photos.radius','number',{min:0,max:100}),
  field('URL λογοτύπου','branding.logoUrl','url',{full:true}),
  field('URL φόντου','branding.backgroundUrl','url',{full:true}),
