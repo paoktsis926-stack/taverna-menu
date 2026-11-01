@@ -1,10 +1,10 @@
 'use strict';
 
 const DIGITAL_DEFAULT = {
-  colors: { primary:'#103c46', accent:'#d7ad63', background:'#f6f4ee', card:'#fffefa', text:'#19353a', muted:'#697a79' },
-  typography: { headingFont:'Georgia', bodyFont:'system-ui', headingSize:30, bodySize:16 },
-  layout: { frameWidth:1080, columns:2, cardRadius:16, cardPadding:15, cardGap:14, borderWidth:1 },
-  photos: { width:124, height:124, fit:'cover', radius:12 },
+  colors: { primary:'#103c46', accent:'#d7ad63', background:'#f6f4ee', card:'#fffefa', text:'#19353a', muted:'#697a79', border:'#e4e2d8' },
+  typography: { headingFont:'Georgia', bodyFont:'system-ui', headingSize:30, bodySize:16, headingWeight:700, bodyWeight:400, textAlign:'left' },
+  layout: { frameWidth:1080, columns:2, cardRadius:16, cardPadding:15, cardGap:14, borderWidth:1, cardShadow:'soft' },
+  photos: { width:124, height:124, fit:'cover', position:'center', radius:12 },
   branding: { logoUrl:'', backgroundUrl:'', coverUrl:'' },
   devices: {
     mobile:{ columns:1, cardGap:9, cardPadding:12, fontSize:15, photoWidth:96, photoHeight:96 },
@@ -13,8 +13,8 @@ const DIGITAL_DEFAULT = {
   }
 };
 const PDF_DEFAULT = {
-  colors: { primary:'#103c46', accent:'#d7ad63', background:'#ffffff', card:'#fffefa', text:'#19353a', muted:'#657371' },
-  typography: { headingFont:'Georgia', bodyFont:'system-ui', headingSize:30, bodySize:10, categorySize:13 },
+  colors: { primary:'#103c46', accent:'#d7ad63', background:'#ffffff', card:'#fffefa', text:'#19353a', muted:'#657371', border:'#dddddd' },
+  typography: { headingFont:'Georgia', bodyFont:'system-ui', headingSize:30, bodySize:10, categorySize:13, headingWeight:700, bodyWeight:400, textAlign:'left' },
   layout: { pageSize:'A4', marginTop:12, marginSide:12, marginBottom:14, columns:2, columnGap:10, itemGap:2.3, borderWidth:0 },
   branding: { logoUrl:'', backgroundUrl:'', coverUrl:'' }
 };
@@ -23,6 +23,7 @@ const clamp = (v, min, max, fallback) => {
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
 };
 const color = (v, fallback) => /^#[0-9a-f]{6}$/i.test(String(v || '')) ? String(v) : fallback;
+const weight = (v, fallback) => ['400','500','600','700','800'].includes(String(v)) ? Number(v) : fallback;
 const font = (v, fallback) => ['Georgia','Arial','system-ui','Verdana','Trebuchet MS','Times New Roman','Palatino Linotype'].includes(v) ? v : fallback;
 const image = v => {
   const s = String(v || '').trim();
@@ -37,7 +38,10 @@ function normalizeDesign(type, input) {
   d.typography.headingFont = font(src.typography?.headingFont, d.typography.headingFont);
   d.typography.bodyFont = font(src.typography?.bodyFont, d.typography.bodyFont);
   d.typography.headingSize = clamp(src.typography?.headingSize, 12, 56, d.typography.headingSize);
-  d.typography.bodySize = clamp(src.typography?.bodySize, type === 'pdf' ? 6 : 11, type === 'pdf' ? 24 : 24, d.typography.bodySize);
+  d.typography.bodySize = clamp(src.typography?.bodySize, type === 'pdf' ? 6 : 11, 24, d.typography.bodySize);
+  d.typography.headingWeight = weight(src.typography?.headingWeight, d.typography.headingWeight);
+  d.typography.bodyWeight = weight(src.typography?.bodyWeight, d.typography.bodyWeight);
+  d.typography.textAlign = ['left','center','right'].includes(src.typography?.textAlign) ? src.typography.textAlign : d.typography.textAlign;
   if (type === 'pdf') {
     d.typography.categorySize = clamp(src.typography?.categorySize, 8, 28, d.typography.categorySize);
     d.layout.pageSize = 'A4';
@@ -54,10 +58,12 @@ function normalizeDesign(type, input) {
     d.layout.cardRadius = clamp(src.layout?.cardRadius, 0, 36, d.layout.cardRadius);
     d.layout.cardPadding = clamp(src.layout?.cardPadding, 4, 32, d.layout.cardPadding);
     d.layout.cardGap = clamp(src.layout?.cardGap, 0, 32, d.layout.cardGap);
+    d.layout.cardShadow = ['none','soft','strong'].includes(src.layout?.cardShadow) ? src.layout.cardShadow : d.layout.cardShadow;
     d.layout.borderWidth = clamp(src.layout?.borderWidth, 0, 4, d.layout.borderWidth);
     d.photos.width = clamp(src.photos?.width, 48, 320, d.photos.width);
     d.photos.height = clamp(src.photos?.height, 48, 320, d.photos.height);
     d.photos.fit = ['cover','contain','fill'].includes(src.photos?.fit) ? src.photos.fit : d.photos.fit;
+    d.photos.position = ['center','top','bottom','left','right'].includes(src.photos?.position) ? src.photos.position : d.photos.position;
     d.photos.radius = clamp(src.photos?.radius, 0, 100, d.photos.radius);
     for (const device of ['mobile','tablet','desktop']) {
       const x = src.devices?.[device] || {};
