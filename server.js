@@ -242,12 +242,13 @@ A.post('/items', (req, res) => {
   if (!name) return res.status(400).json({ error: 'Δώστε όνομα πιάτου' });
   if (!db.prepare('SELECT 1 FROM categories WHERE id=?').get(b.category_id)) return res.status(400).json({ error: 'Άκυρη κατηγορία' });
   const image = imageUrl(b.image_url);
-  const vatRate = Number(b.vat_rate ?? 13);
-  if (![13,24].includes(vatRate)) return res.status(400).json({ error: 'Ο ΦΠΑ πρέπει να είναι 13% ή 24%.' });
+  const vatMode = String(b.vat_mode || (Number(b.vat_rate) === 24 ? 'fixed24' : 'fixed13'));
+  if (!['fixed13','fixed24','service'].includes(vatMode)) return res.status(400).json({ error: 'Μη έγκυρος τρόπος ΦΠΑ.' });
+  const vatRate = vatMode === 'fixed24' ? 24 : 13;
   if (image === null) return res.status(400).json({ error: 'Η φωτογραφία πρέπει να έχει έγκυρο URL HTTPS.' });
   const sort = db.prepare('SELECT COALESCE(MAX(sort),0)+1 n FROM items WHERE category_id=?').get(b.category_id).n;
-  res.json({ id: db.prepare('INSERT INTO items(category_id,name,name_en,name_bg,name_tr,description,description_en,description_bg,description_tr,price,available,sort,allergens,allergens_en,allergens_bg,allergens_tr,image_url,allergen_codes,popular,vat_rate) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-    .run(b.category_id, name, str(b.name_en,150), str(b.name_bg,150), str(b.name_tr,150), str(b.description,400), str(b.description_en,400), str(b.description_bg,400), str(b.description_tr,400), num(b.price), bool(b.available ?? 1), sort, str(b.allergens,300), str(b.allergens_en,300), str(b.allergens_bg,300), str(b.allergens_tr,300), image, allergenCodes(b.allergen_codes), bool(b.popular ?? 0), vatRate).lastInsertRowid });
+  res.json({ id: db.prepare('INSERT INTO items(category_id,name,name_en,name_bg,name_tr,description,description_en,description_bg,description_tr,price,available,sort,allergens,allergens_en,allergens_bg,allergens_tr,image_url,allergen_codes,popular,vat_rate,vat_mode) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(b.category_id, name, str(b.name_en,150), str(b.name_bg,150), str(b.name_tr,150), str(b.description,400), str(b.description_en,400), str(b.description_bg,400), str(b.description_tr,400), num(b.price), bool(b.available ?? 1), sort, str(b.allergens,300), str(b.allergens_en,300), str(b.allergens_bg,300), str(b.allergens_tr,300), image, allergenCodes(b.allergen_codes), bool(b.popular ?? 0), vatRate, vatMode).lastInsertRowid });
 });
 A.put('/items/:id', (req, res) => {
   const it = db.prepare('SELECT * FROM items WHERE id=?').get(req.params.id);
@@ -255,11 +256,12 @@ A.put('/items/:id', (req, res) => {
   const b = { ...it, ...req.body }, name = str(b.name, 150);
   if (!name) return res.status(400).json({ error: 'Δώστε όνομα πιάτου' });
   const image = imageUrl(b.image_url, it.image_url || '');
-  const vatRate = Number(b.vat_rate ?? it.vat_rate ?? 13);
-  if (![13,24].includes(vatRate)) return res.status(400).json({ error: 'Ο ΦΠΑ πρέπει να είναι 13% ή 24%.' });
+  const vatMode = String(b.vat_mode ?? it.vat_mode ?? (Number(b.vat_rate) === 24 ? 'fixed24' : 'fixed13'));
+  if (!['fixed13','fixed24','service'].includes(vatMode)) return res.status(400).json({ error: 'Μη έγκυρος τρόπος ΦΠΑ.' });
+  const vatRate = vatMode === 'fixed24' ? 24 : 13;
   if (image === null) return res.status(400).json({ error: 'Η φωτογραφία πρέπει να έχει έγκυρο URL HTTPS.' });
-  db.prepare('UPDATE items SET category_id=?,name=?,name_en=?,name_bg=?,name_tr=?,description=?,description_en=?,description_bg=?,description_tr=?,price=?,available=?,allergens=?,allergens_en=?,allergens_bg=?,allergens_tr=?,image_url=?,allergen_codes=?,popular=?,vat_rate=? WHERE id=?')
-    .run(b.category_id, name, str(b.name_en,150), str(b.name_bg,150), str(b.name_tr,150), str(b.description,400), str(b.description_en,400), str(b.description_bg,400), str(b.description_tr,400), num(b.price), bool(b.available), str(b.allergens,300), str(b.allergens_en,300), str(b.allergens_bg,300), str(b.allergens_tr,300), image, allergenCodes(b.allergen_codes ?? it.allergen_codes), bool(b.popular ?? it.popular), vatRate, it.id);
+  db.prepare('UPDATE items SET category_id=?,name=?,name_en=?,name_bg=?,name_tr=?,description=?,description_en=?,description_bg=?,description_tr=?,price=?,available=?,allergens=?,allergens_en=?,allergens_bg=?,allergens_tr=?,image_url=?,allergen_codes=?,popular=?,vat_rate=?,vat_mode=? WHERE id=?')
+    .run(b.category_id, name, str(b.name_en,150), str(b.name_bg,150), str(b.name_tr,150), str(b.description,400), str(b.description_en,400), str(b.description_bg,400), str(b.description_tr,400), num(b.price), bool(b.available), str(b.allergens,300), str(b.allergens_en,300), str(b.allergens_bg,300), str(b.allergens_tr,300), image, allergenCodes(b.allergen_codes ?? it.allergen_codes), bool(b.popular ?? it.popular), vatRate, vatMode, it.id);
   res.json({ ok: true });
 });
 A.delete('/items/:id', (req, res) => { db.prepare('DELETE FROM items WHERE id=?').run(req.params.id); res.json({ ok: true }); });
