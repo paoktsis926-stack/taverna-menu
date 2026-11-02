@@ -115,7 +115,24 @@ const digitalFields=[
  field('Στρογγύλεμα φωτογραφίας (px)','photos.radius','number',{min:0,max:100}),
  field('URL λογοτύπου','branding.logoUrl','url',{full:true}),
  field('URL φόντου','branding.backgroundUrl','url',{full:true}),
- field('URL εξωφύλλου','branding.coverUrl','url',{full:true})
+ field('URL εξωφύλλου','branding.coverUrl','url',{full:true}),
+ field('Ύψος επάνω μέρους (px)','header.height','number',{min:120,max:420}),
+ field('Στοίχιση επάνω μέρους','header.align','select',{options:['left','center','right']}),
+ field('Εμφάνιση μικρού τίτλου','header.showEyebrow','select',{options:['true','false']}),
+ field('Εμφάνιση υπότιτλου','header.showTagline','select',{options:['true','false']}),
+ field('Εμφάνιση διεύθυνσης','header.showAddress','select',{options:['true','false']}),
+ field('Εμφάνιση επιλογής γλώσσας','header.showLanguage','select',{options:['true','false']}),
+ field('Στυλ τίτλου κατηγορίας','categories.style','select',{options:['line','block','pill','minimal']}),
+ field('Κουμπιά κατηγοριών','categories.showButtons','select',{options:['true','false']}),
+ field('Αναζήτηση','categories.showSearch','select',{options:['true','false']}),
+ field('Φίλτρο μόνο διαθέσιμα','categories.showAvailableFilter','select',{options:['true','false']}),
+ field('Στυλ πιάτων','dishes.style','select',{options:['card','compact','editorial']}),
+ field('Φωτογραφίες πιάτων','dishes.showPhotos','select',{options:['true','false']}),
+ field('Αρίθμηση πιάτων','dishes.showNumbers','select',{options:['true','false']}),
+ field('Ελληνικά και αγγλικά μαζί','dishes.showBilingual','select',{options:['true','false']}),
+ field('Περιγραφές πιάτων','dishes.showDescriptions','select',{options:['true','false']}),
+ field('Αλλεργιογόνα','dishes.showAllergens','select',{options:['true','false']}),
+ field('Θέση τιμής','dishes.pricePosition','select',{options:['left','right','below']})
 ];
 const pdfFields=[
  ...common.filter(x=>x.path!=='typography.bodySize'),
@@ -127,6 +144,15 @@ const pdfFields=[
  field('Στήλες PDF','layout.columns','select',{options:['1','2','3']}),
  field('Απόσταση στηλών (mm)','layout.columnGap','number',{min:2,max:24,step:.5}),
  field('Απόσταση πιάτων (mm)','layout.itemGap','number',{min:.5,max:8,step:.1}),
+ field('Μέγεθος χαρτιού','layout.pageSize','select',{options:['A4','A5','Letter']}),
+ field('Προσανατολισμός','layout.orientation','select',{options:['portrait','landscape']}),
+ field('Αρίθμηση σελίδων','layout.pageNumbers','select',{options:['true','false']}),
+ field('Κάθε κατηγορία σε νέα σελίδα','layout.newCategoryPage','select',{options:['true','false']}),
+ field('Εμφάνιση QR','layout.showQr','select',{options:['true','false']}),
+ field('Εμφάνιση υποσέλιδου','layout.showFooter','select',{options:['true','false']}),
+ field('Εμφάνιση κειμένου «40 χρόνια»','layout.showHeritage','select',{options:['true','false']}),
+ field('Τελείες μέχρι την τιμή','layout.showPriceDots','select',{options:['true','false']}),
+ field('Φωτογραφίες πιάτων στο PDF','layout.showPhotos','select',{options:['true','false']}),
  field('Πάχος περιγράμματος (pt)','layout.borderWidth','number',{min:0,max:4,step:.5}),
  field('URL λογοτύπου','branding.logoUrl','url',{full:true}),
  field('URL φόντου','branding.backgroundUrl','url',{full:true}),
@@ -178,7 +204,7 @@ function switchDevice(next){device=next;$$('[data-device]').forEach(b=>b.classLi
 $('#fields').addEventListener('change',e=>{
  const input=e.target.closest('[data-path],[data-device-path]');if(!input)return;
  const isDevice=input.hasAttribute('data-device-path'),path=isDevice?input.dataset.devicePath:input.dataset.path;
- snapshot();const value=input.type==='number'?Number(input.value):input.value;
+ snapshot();const value=input.type==='number'?Number(input.value):(input.value==='true'?true:input.value==='false'?false:input.value);
  if(isDevice)state.digital.devices[device][path]=value;else set(currentDesign(),path,value);
  updatePreview();markDirty();
 });
