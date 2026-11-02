@@ -49,7 +49,7 @@ function normalizeDesign(type, input) {
     d.typography.categorySize = clamp(src.typography?.categorySize, 8, 28, d.typography.categorySize);
     d.layout.pageSize = ['A4','A5','Letter'].includes(src.layout?.pageSize) ? src.layout.pageSize : d.layout.pageSize;
     d.layout.orientation = ['portrait','landscape'].includes(src.layout?.orientation) ? src.layout.orientation : d.layout.orientation;
-    for (const k of ['pageNumbers','newCategoryPage','showQr','showFooter','showHeritage','showPriceDots','showPhotos']) d.layout[k] = src.layout?.[k] === true;
+    for (const k of ['pageNumbers','newCategoryPage','showQr','showFooter','showHeritage','showPriceDots','showPhotos']) d.layout[k] = src.layout?.[k] === undefined ? d.layout[k] : src.layout[k] === true;
     d.layout.marginTop = clamp(src.layout?.marginTop, 4, 25, d.layout.marginTop);
     d.layout.marginSide = clamp(src.layout?.marginSide, 4, 25, d.layout.marginSide);
     d.layout.marginBottom = clamp(src.layout?.marginBottom, 4, 25, d.layout.marginBottom);
@@ -64,7 +64,7 @@ function normalizeDesign(type, input) {
     d.categories.style = ['line','block','pill','minimal'].includes(src.categories?.style) ? src.categories.style : d.categories.style;
     for (const k of ['showButtons','showSearch','showAvailableFilter']) d.categories[k] = src.categories?.[k] !== false;
     d.dishes.style = ['card','compact','editorial'].includes(src.dishes?.style) ? src.dishes.style : d.dishes.style;
-    for (const k of ['showPhotos','showNumbers','showBilingual','showDescriptions','showAllergens']) d.dishes[k] = src.dishes?.[k] === true;
+    for (const k of ['showPhotos','showNumbers','showBilingual','showDescriptions','showAllergens']) d.dishes[k] = src.dishes?.[k] === undefined ? d.dishes[k] : src.dishes[k] === true;
     d.dishes.pricePosition = ['left','right','below'].includes(src.dishes?.pricePosition) ? src.dishes.pricePosition : d.dishes.pricePosition;
     d.layout.frameWidth = clamp(src.layout?.frameWidth, 320, 1600, d.layout.frameWidth);
     d.layout.columns = clamp(src.layout?.columns, 1, 3, d.layout.columns);
