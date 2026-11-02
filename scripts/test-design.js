@@ -31,4 +31,17 @@ const pdf = normalizeDesign('pdf', { layout: { marginTop: 100, columns: 0 }, typ
 assert.equal(pdf.layout.marginTop, 25);
 assert.equal(pdf.layout.columns, 1);
 assert.equal(pdf.typography.bodySize, 6);
+const extendedPdf = normalizeDesign('pdf', { layout: { pageSize: 'A5', orientation: 'landscape', showPhotos: true, showQr: false, newCategoryPage: true } });
+assert.equal(extendedPdf.layout.pageSize, 'A5');
+assert.equal(extendedPdf.layout.orientation, 'landscape');
+assert.equal(extendedPdf.layout.showPhotos, true);
+assert.equal(extendedPdf.layout.showQr, false);
+assert.equal(extendedPdf.layout.newCategoryPage, true);
+const extendedDigital = normalizeDesign('digital', { header: { height: 300, align: 'left' }, categories: { style: 'pill', showSearch: false }, dishes: { showPhotos: false, showAllergens: false } });
+assert.equal(extendedDigital.header.height, 300);
+assert.equal(extendedDigital.header.align, 'left');
+assert.equal(extendedDigital.categories.style, 'pill');
+assert.equal(extendedDigital.categories.showSearch, false);
+assert.equal(extendedDigital.dishes.showPhotos, false);
+assert.equal(extendedDigital.dishes.showAllergens, false);
 console.log('Design settings validation tests passed.');
