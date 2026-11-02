@@ -68,7 +68,7 @@ else Promise.all([
 
 function drawBill(b,name){
   var h='<div class="sheet"><div class="top"><div><div class="rest">'+esc(name)+'</div><div class="title">ΛΟΓΑΡΙΑΣΜΟΣ</div></div><div class="no">Τραπέζι '+esc(b.table_label)+'</div></div>'+
-  '<div class="meta"><div><b>Ημερομηνία:</b>'+esc(new Date().toLocaleDateString('el-GR'))+'</div><div><b>Παραγγελίες:</b>'+b.orders.length+'</div></div>';
+  '<div class="meta"><div><b>Ημερομηνία:</b>'+esc(new Date().toLocaleDateString('el-GR'))+'</div><div><b>Παραγγελίες:</b>'+b.orders.length+'</div><div><b>Εξυπηρέτηση:</b>'+ (b.orders.every(function(o){return o.service_mode==='takeaway_delivery'})?'Take away / Delivery':b.orders.every(function(o){return o.service_mode==='dine_in'})?'Σερβίρισμα στο τραπέζι':'Μικτή εξυπηρέτηση')+'</div></div>';
   b.orders.forEach(function(o){
     h+='<div class="cat">Παραγγελία #'+o.id+' · '+esc(new Date(o.created_at).toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'}))+'</div>';
     o.items.forEach(function(l){
