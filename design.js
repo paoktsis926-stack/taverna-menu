@@ -6,6 +6,9 @@ const DIGITAL_DEFAULT = {
   layout: { frameWidth:1080, columns:2, cardRadius:16, cardPadding:15, cardGap:14, borderWidth:1, cardShadow:'soft' },
   photos: { width:124, height:124, fit:'cover', position:'center', radius:12 },
   branding: { logoUrl:'', backgroundUrl:'', coverUrl:'' },
+  header: { height:220, align:'center', showEyebrow:true, showTagline:true, showAddress:true, showLanguage:true },
+  categories: { style:'line', showButtons:true, showSearch:true, showAvailableFilter:true },
+  dishes: { style:'card', showPhotos:true, showNumbers:false, showBilingual:false, showDescriptions:true, showAllergens:true, pricePosition:'right' },
   devices: {
     mobile:{ columns:1, cardGap:9, cardPadding:12, fontSize:15, photoWidth:96, photoHeight:96 },
     tablet:{ columns:2, cardGap:12, cardPadding:14, fontSize:16, photoWidth:112, photoHeight:112 },
@@ -15,7 +18,7 @@ const DIGITAL_DEFAULT = {
 const PDF_DEFAULT = {
   colors: { primary:'#103c46', accent:'#d7ad63', background:'#ffffff', card:'#fffefa', text:'#19353a', muted:'#657371', border:'#dddddd' },
   typography: { headingFont:'Georgia', bodyFont:'system-ui', headingSize:30, bodySize:10, categorySize:13, headingWeight:700, bodyWeight:400, textAlign:'left' },
-  layout: { pageSize:'A4', marginTop:12, marginSide:12, marginBottom:14, columns:2, columnGap:10, itemGap:2.3, borderWidth:0 },
+  layout: { pageSize:'A4', orientation:'portrait', marginTop:12, marginSide:12, marginBottom:14, columns:2, columnGap:10, itemGap:2.3, borderWidth:0, pageNumbers:true, newCategoryPage:false, showQr:true, showFooter:true, showHeritage:true, showPriceDots:true, showPhotos:false },
   branding: { logoUrl:'', backgroundUrl:'', coverUrl:'' }
 };
 const clamp = (v, min, max, fallback) => {
@@ -44,7 +47,9 @@ function normalizeDesign(type, input) {
   d.typography.textAlign = ['left','center','right'].includes(src.typography?.textAlign) ? src.typography.textAlign : d.typography.textAlign;
   if (type === 'pdf') {
     d.typography.categorySize = clamp(src.typography?.categorySize, 8, 28, d.typography.categorySize);
-    d.layout.pageSize = 'A4';
+    d.layout.pageSize = ['A4','A5','Letter'].includes(src.layout?.pageSize) ? src.layout.pageSize : d.layout.pageSize;
+    d.layout.orientation = ['portrait','landscape'].includes(src.layout?.orientation) ? src.layout.orientation : d.layout.orientation;
+    for (const k of ['pageNumbers','newCategoryPage','showQr','showFooter','showHeritage','showPriceDots','showPhotos']) d.layout[k] = src.layout?.[k] === true;
     d.layout.marginTop = clamp(src.layout?.marginTop, 4, 25, d.layout.marginTop);
     d.layout.marginSide = clamp(src.layout?.marginSide, 4, 25, d.layout.marginSide);
     d.layout.marginBottom = clamp(src.layout?.marginBottom, 4, 25, d.layout.marginBottom);
@@ -53,6 +58,14 @@ function normalizeDesign(type, input) {
     d.layout.itemGap = clamp(src.layout?.itemGap, 0.5, 8, d.layout.itemGap);
     d.layout.borderWidth = clamp(src.layout?.borderWidth, 0, 4, d.layout.borderWidth);
   } else {
+    d.header.height = clamp(src.header?.height, 120, 420, d.header.height);
+    d.header.align = ['left','center','right'].includes(src.header?.align) ? src.header.align : d.header.align;
+    for (const k of ['showEyebrow','showTagline','showAddress','showLanguage']) d.header[k] = src.header?.[k] !== false;
+    d.categories.style = ['line','block','pill','minimal'].includes(src.categories?.style) ? src.categories.style : d.categories.style;
+    for (const k of ['showButtons','showSearch','showAvailableFilter']) d.categories[k] = src.categories?.[k] !== false;
+    d.dishes.style = ['card','compact','editorial'].includes(src.dishes?.style) ? src.dishes.style : d.dishes.style;
+    for (const k of ['showPhotos','showNumbers','showBilingual','showDescriptions','showAllergens']) d.dishes[k] = src.dishes?.[k] === true;
+    d.dishes.pricePosition = ['left','right','below'].includes(src.dishes?.pricePosition) ? src.dishes.pricePosition : d.dishes.pricePosition;
     d.layout.frameWidth = clamp(src.layout?.frameWidth, 320, 1600, d.layout.frameWidth);
     d.layout.columns = clamp(src.layout?.columns, 1, 3, d.layout.columns);
     d.layout.cardRadius = clamp(src.layout?.cardRadius, 0, 36, d.layout.cardRadius);
