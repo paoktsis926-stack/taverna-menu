@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS orders (
   note TEXT DEFAULT '',
   status TEXT NOT NULL DEFAULT 'new',
   created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL);
+  updated_at INTEGER NOT NULL,
+  service_mode TEXT NOT NULL DEFAULT 'dine_in');
 CREATE TABLE IF NOT EXISTS order_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
@@ -42,6 +43,8 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 
   // Idempotent migration for existing waiter orders. Snapshot menu price and VAT once,
   // so later product edits never rewrite an already placed order.
+  const orderColumns = new Set(db.prepare('PRAGMA table_info(orders)').all().map(x => x.name));
+  if (!orderColumns.has('service_mode')) db.exec("ALTER TABLE orders ADD COLUMN service_mode TEXT NOT NULL DEFAULT 'dine_in'");
   const lineColumns = new Set(db.prepare('PRAGMA table_info(order_items)').all().map(x => x.name));
   if (!lineColumns.has('unit_price')) {
     db.exec('ALTER TABLE order_items ADD COLUMN unit_price REAL NOT NULL DEFAULT 0');
@@ -52,9 +55,9 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
     db.exec('UPDATE order_items SET vat_rate=COALESCE((SELECT vat_rate FROM items WHERE items.id=order_items.item_id),13)');
   }
 
-  const getItem = db.prepare('SELECT i.id, i.name, i.available, i.price, i.vat_rate, c.name AS category FROM items i JOIN categories c ON c.id = i.category_id WHERE i.id = ?');
+  const getItem = db.prepare('SELECT i.id, i.name, i.available, i.price, i.vat_rate, i.vat_mode, c.name AS category FROM items i JOIN categories c ON c.id = i.category_id WHERE i.id = ?');
   const byClient = db.prepare('SELECT id FROM orders WHERE client_id = ?');
-  const insOrder = db.prepare('INSERT INTO orders(client_id, table_label, waiter, note, status, created_at, updated_at) VALUES(?,?,?,?,?,?,?)');
+  const insOrder = db.prepare('INSERT INTO orders(client_id, table_label, waiter, note, status, created_at, updated_at, service_mode) VALUES(?,?,?,?,?,?,?,?)');
   const insLine = db.prepare('INSERT INTO order_items(order_id, item_id, name, category, qty, note, unit_price, vat_rate) VALUES(?,?,?,?,?,?,?,?)');
   const getOrder = db.prepare('SELECT * FROM orders WHERE id = ?');
   const getLines = db.prepare('SELECT item_id, name, category, qty, note, unit_price, vat_rate FROM order_items WHERE order_id = ? ORDER BY id');
@@ -85,8 +88,10 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 
   function validate(body) {
     body = body || {};
-    const table = clean(body.table, 20);
-    if (!table || !/^[\p{L}\p{N} .\-\/]+$/u.test(table)) return { error: 'Γράψτε τραπέζι (π.χ. 7 ή Βεράντα 2).' };
+    const table = clean(body.table, 40);
+    if (!table || !/^[\p{L}\p{N} .\-\/]+$/u.test(table)) return { error: 'Γράψτε τραπέζι ή αναγνωριστικό παραλαβής.' };
+    const serviceMode = body.service_mode === 'takeaway_delivery' ? 'takeaway_delivery' : body.service_mode === 'dine_in' ? 'dine_in' : null;
+    if (!serviceMode) return { error: 'Επιλέξτε τρόπο εξυπηρέτησης.' };
     if (!Array.isArray(body.items) || !body.items.length) return { error: 'Η παραγγελία είναι κενή.' };
     if (body.items.length > 60) return { error: 'Πολλά πιάτα σε μία παραγγελία.' };
     const lines = [];
@@ -96,13 +101,14 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
       const it = getItem.get(id);
       if (!it) return { error: 'Ένα πιάτο δεν υπάρχει πια στον κατάλογο.' };
       if (!it.available) return { error: `Το «${it.name}» έχει εξαντληθεί.` };
-      const price = Number(it.price), vatRate = Number(it.vat_rate);
-      if (!Number.isFinite(price) || price < 0 || ![13,24].includes(vatRate)) return { error: 'Το προϊόν έχει μη έγκυρη τιμή ή συντελεστή ΦΠΑ. Ελέγξτε το στο Admin.' };
+      const price = Number(it.price), mode = ['fixed13','fixed24','service'].includes(it.vat_mode) ? it.vat_mode : (Number(it.vat_rate) === 24 ? 'fixed24' : 'fixed13');
+      const vatRate = mode === 'fixed24' ? 24 : mode === 'service' ? (serviceMode === 'dine_in' ? 24 : 13) : 13;
+      if (!Number.isFinite(price) || price < 0) return { error: 'Το προϊόν έχει μη έγκυρη τιμή. Ελέγξτε το στο Admin.' };
       lines.push({ id: it.id, name: it.name, category: it.category, qty, note: clean(raw.note, 120), unit_price: Math.round(price * 100) / 100, vat_rate: vatRate });
     }
     const cid = clean(body.clientId, 64);
     return {
-      table, lines,
+      table, lines, service_mode: serviceMode,
       note: clean(body.note, 200),
       waiter: clean(body.waiter, 30),
       clientId: /^[A-Za-z0-9-]{8,64}$/.test(cid) ? cid : null,
@@ -119,7 +125,7 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
     const now = Date.now();
     db.exec('BEGIN IMMEDIATE');
     try {
-      const r = insOrder.run(v.clientId, v.table, v.waiter, v.note, 'new', now, now);
+      const r = insOrder.run(v.clientId, v.table, v.waiter, v.note, 'new', now, now, v.service_mode);
       const id = Number(r.lastInsertRowid);
       for (const l of v.lines) insLine.run(id, l.id, l.name, l.category, l.qty, l.note, l.unit_price, l.vat_rate);
       db.exec('COMMIT');
