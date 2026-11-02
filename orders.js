@@ -33,17 +33,32 @@ CREATE TABLE IF NOT EXISTS order_items (
   name TEXT NOT NULL,
   category TEXT DEFAULT '',
   qty INTEGER NOT NULL,
-  note TEXT DEFAULT '');
+  note TEXT DEFAULT '',
+  unit_price REAL NOT NULL DEFAULT 0,
+  vat_rate INTEGER NOT NULL DEFAULT 13);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status, created_at);
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 `);
 
-  const getItem = db.prepare('SELECT i.id, i.name, i.available, c.name AS category FROM items i JOIN categories c ON c.id = i.category_id WHERE i.id = ?');
+  // Idempotent migration for existing waiter orders. Snapshot menu price and VAT once,
+  // so later product edits never rewrite an already placed order.
+  const lineColumns = new Set(db.prepare('PRAGMA table_info(order_items)').all().map(x => x.name));
+  if (!lineColumns.has('unit_price')) {
+    db.exec('ALTER TABLE order_items ADD COLUMN unit_price REAL NOT NULL DEFAULT 0');
+    db.exec('UPDATE order_items SET unit_price=COALESCE((SELECT price FROM items WHERE items.id=order_items.item_id),0)');
+  }
+  if (!lineColumns.has('vat_rate')) {
+    db.exec('ALTER TABLE order_items ADD COLUMN vat_rate INTEGER NOT NULL DEFAULT 13');
+    db.exec('UPDATE order_items SET vat_rate=COALESCE((SELECT vat_rate FROM items WHERE items.id=order_items.item_id),13)');
+  }
+
+  const getItem = db.prepare('SELECT i.id, i.name, i.available, i.price, i.vat_rate, c.name AS category FROM items i JOIN categories c ON c.id = i.category_id WHERE i.id = ?');
   const byClient = db.prepare('SELECT id FROM orders WHERE client_id = ?');
   const insOrder = db.prepare('INSERT INTO orders(client_id, table_label, waiter, note, status, created_at, updated_at) VALUES(?,?,?,?,?,?,?)');
-  const insLine = db.prepare('INSERT INTO order_items(order_id, item_id, name, category, qty, note) VALUES(?,?,?,?,?,?)');
+  const insLine = db.prepare('INSERT INTO order_items(order_id, item_id, name, category, qty, note, unit_price, vat_rate) VALUES(?,?,?,?,?,?,?,?)');
   const getOrder = db.prepare('SELECT * FROM orders WHERE id = ?');
-  const getLines = db.prepare('SELECT item_id, name, category, qty, note FROM order_items WHERE order_id = ? ORDER BY id');
+  const getLines = db.prepare('SELECT item_id, name, category, qty, note, unit_price, vat_rate FROM order_items WHERE order_id = ? ORDER BY id');
+  const listForBills = db.prepare("SELECT * FROM orders WHERE status <> 'cancelled' ORDER BY created_at, id");
   const listActive = db.prepare(`SELECT * FROM orders WHERE status IN ('new','preparing','ready') ORDER BY created_at, id`);
   const setStatusStmt = db.prepare('UPDATE orders SET status = ?, updated_at = ? WHERE id = ?');
   const delOneLines = db.prepare('DELETE FROM order_items WHERE order_id = ?');
@@ -51,7 +66,22 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
   const delLines = db.prepare('DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE created_at < ?)');
   const delOrders = db.prepare('DELETE FROM orders WHERE created_at < ?');
 
-  const full = o => (o ? { ...o, items: getLines.all(o.id) } : null);
+  function summarize(lines) {
+    const out = { net: 0, vat13: 0, vat24: 0, vat: 0, total: 0 };
+    let netCents = 0, vat13Cents = 0, vat24Cents = 0, totalCents = 0;
+    for (const line of lines) {
+      const gross = Math.round(Number(line.unit_price) * 100) * Number(line.qty);
+      const rate = Number(line.vat_rate);
+      const tax = Math.round(gross * rate / (100 + rate));
+      totalCents += gross;
+      if (rate === 13) vat13Cents += tax; else if (rate === 24) vat24Cents += tax;
+      netCents += gross - tax;
+    }
+    out.net = netCents / 100; out.vat13 = vat13Cents / 100; out.vat24 = vat24Cents / 100;
+    out.vat = (vat13Cents + vat24Cents) / 100; out.total = totalCents / 100;
+    return out;
+  }
+  const full = o => { if (!o) return null; const items = getLines.all(o.id); return { ...o, items, totals: summarize(items) }; };
 
   function validate(body) {
     body = body || {};
@@ -66,7 +96,9 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
       const it = getItem.get(id);
       if (!it) return { error: 'Ένα πιάτο δεν υπάρχει πια στον κατάλογο.' };
       if (!it.available) return { error: `Το «${it.name}» έχει εξαντληθεί.` };
-      lines.push({ id: it.id, name: it.name, category: it.category, qty, note: clean(raw.note, 120) });
+      const price = Number(it.price), vatRate = Number(it.vat_rate);
+      if (!Number.isFinite(price) || price < 0 || ![13,24].includes(vatRate)) return { error: 'Το προϊόν έχει μη έγκυρη τιμή ή συντελεστή ΦΠΑ. Ελέγξτε το στο Admin.' };
+      lines.push({ id: it.id, name: it.name, category: it.category, qty, note: clean(raw.note, 120), unit_price: Math.round(price * 100) / 100, vat_rate: vatRate });
     }
     const cid = clean(body.clientId, 64);
     return {
@@ -89,7 +121,7 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
     try {
       const r = insOrder.run(v.clientId, v.table, v.waiter, v.note, 'new', now, now);
       const id = Number(r.lastInsertRowid);
-      for (const l of v.lines) insLine.run(id, l.id, l.name, l.category, l.qty, l.note);
+      for (const l of v.lines) insLine.run(id, l.id, l.name, l.category, l.qty, l.note, l.unit_price, l.vat_rate);
       db.exec('COMMIT');
       return { order: full(getOrder.get(id)) };
     } catch (e) {
@@ -99,6 +131,17 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
   }
 
   const list = () => listActive.all().map(full);
+  function bills() {
+    const grouped = new Map();
+    for (const row of listForBills.all()) {
+      const order = full(row);
+      if (!grouped.has(order.table_label)) grouped.set(order.table_label, { table_label: order.table_label, orders: [], totals: { net: 0, vat13: 0, vat24: 0, vat: 0, total: 0 } });
+      const bill = grouped.get(order.table_label);
+      bill.orders.push(order);
+      for (const key of ['net','vat13','vat24','vat','total']) bill.totals[key] = Math.round((bill.totals[key] + order.totals[key]) * 100) / 100;
+    }
+    return Array.from(grouped.values()).sort((a,b) => a.table_label.localeCompare(b.table_label, 'el', { numeric: true }));
+  }
 
   function setStatus(id, status) {
     if (!STATUSES.includes(status)) return { error: 'Μη έγκυρη κατάσταση.' };
@@ -125,7 +168,7 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
     return { ok: true };
   }
 
-  return { validate, create, list, get, setStatus, remove, cleanup };
+  return { validate, create, list, bills, get, setStatus, remove, cleanup };
 }
 
 // Σύνδεση με το express. ctx: { sign, getCookie, safeEq, attempts, adminAuthed, adminPassword, staffPassword, pub, path }
@@ -160,6 +203,7 @@ function mountOrders(app, db, ctx) {
   app.post('/api/staff/logout', (req, res) => { res.clearCookie('staff'); res.json({ ok: true }); });
   app.get('/api/staff/me', guard, (req, res) => res.json({ ok: true }));
   app.get('/api/staff/orders', guard, (req, res) => res.json({ now: Date.now(), orders: core.list() }));
+  app.get('/api/staff/bills', guard, (req, res) => res.json({ bills: core.bills() }));
   app.post('/api/staff/orders', guard, (req, res) => {
     const r = core.create(req.body);
     if (r.error) return res.status(400).json({ error: r.error });
