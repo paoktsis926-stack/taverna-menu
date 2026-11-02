@@ -261,7 +261,7 @@ function drawOrders(){
   var nr=orders.filter(function(o){return o.status==='ready'}).length,n=$('#nAct');
   n.hidden=!orders.length;n.textContent=orders.length;n.className='badge'+(nr?' ready':'');
 }
-$('#bills').addEventListener('click',function(e){var b=e.target.closest('button[data-bill]');if(!b)return;var card=b.closest('.bill'),label=card.querySelector('h2').textContent.replace(/^Τραπέζι\\s*/,'');window.open('/order?bill=1&table='+encodeURIComponent(label)+'&print=1','_blank')});
+$('#bills').addEventListener('click',function(e){var b=e.target.closest('button[data-bill]');if(!b)return;var card=b.closest('.bill'),label=card.querySelector('h2').textContent.replace(/^Τραπέζι\s*/,'');window.open('/order?bill=1&table='+encodeURIComponent(label)+'&print=1','_blank')});
 $('#orders').addEventListener('click',function(e){
   var b=e.target.closest('button');if(!b||!b.closest('.ord'))return;
   var id=b.closest('.ord').dataset.id;
