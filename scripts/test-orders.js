@@ -8,9 +8,9 @@ if (Database) db = new Database(':memory:');
 else { const { DatabaseSync } = require('node:sqlite'); db = new DatabaseSync(':memory:'); }
 db.exec(`
 CREATE TABLE categories (id INTEGER PRIMARY KEY, name TEXT);
-CREATE TABLE items (id INTEGER PRIMARY KEY, category_id INTEGER, name TEXT, available INTEGER DEFAULT 1, price REAL DEFAULT 0, vat_rate INTEGER DEFAULT 13);
+CREATE TABLE items (id INTEGER PRIMARY KEY, category_id INTEGER, name TEXT, available INTEGER DEFAULT 1, price REAL DEFAULT 0, vat_rate INTEGER DEFAULT 13, vat_mode TEXT DEFAULT 'fixed13');
 INSERT INTO categories VALUES (1,'Ψάρια');
-INSERT INTO items VALUES (1,1,'Τσιπούρες',1,10,13),(2,1,'Γαύρος',1,5,24),(3,1,'Εξαντλημένο',0,4,13);`);
+INSERT INTO items VALUES (1,1,'Τσιπούρες',1,10,13,'fixed13'),(2,1,'Γαύρος',1,5,24,'fixed24'),(3,1,'Εξαντλημένο',0,4,13,'fixed13'),(4,1,'Καφές',1,3,13,'service');`);
 const { createOrders } = require('../orders');
 const o = createOrders(db);
 
@@ -22,10 +22,10 @@ assert.ok(o.create({ table: '7', items: [] }).error);
 assert.ok(o.create({ table: '7', items: [{ id: 1, qty: 0 }] }).error);
 assert.ok(o.create({ table: '7', items: [{ id: 1, qty: 99 }] }).error);
 assert.ok(o.create({ table: '7', items: [{ id: 999, qty: 1 }] }).error);
-assert.match(o.create({ table: '7', items: [{ id: 3, qty: 1 }] }).error, /εξαντληθεί/);
+assert.match(o.create({ table: '7', service_mode: 'dine_in', items: [{ id: 3, qty: 1 }] }).error, /εξαντληθεί/);
 
 // σωστή παραγγελία, με όνομα από τον κατάλογο (όχι από τον client)
-const r = o.create({ table: ' Βεράντα 2 ', waiter: 'Μαρία', note: 'βιάζονται', clientId: 'abcd-1234-efgh', items: [{ id: 1, qty: 2, note: 'χωρίς λεμόνι', name: 'ΨΕΥΤΙΚΟ' }, { id: 2, qty: 1 }] });
+const r = o.create({ table: ' Βεράντα 2 ', service_mode: 'dine_in', waiter: 'Μαρία', note: 'βιάζονται', clientId: 'abcd-1234-efgh', items: [{ id: 1, qty: 2, note: 'χωρίς λεμόνι', name: 'ΨΕΥΤΙΚΟ' }, { id: 2, qty: 1 }] });
 assert.equal(r.order.table_label, 'Βεράντα 2');
 assert.equal(r.order.items.length, 2);
 assert.equal(r.order.items[0].name, 'Τσιπούρες');
@@ -41,7 +41,7 @@ assert.equal(r.order.totals.net, 21.73);
 assert.equal(r.order.status, 'new');
 
 // διπλή αποστολή (ίδιο clientId) δεν δημιουργεί δεύτερη παραγγελία
-const dup = o.create({ table: 'Βεράντα 2', clientId: 'abcd-1234-efgh', items: [{ id: 1, qty: 2 }] });
+const dup = o.create({ table: 'Βεράντα 2', service_mode: 'dine_in', clientId: 'abcd-1234-efgh', items: [{ id: 1, qty: 2 }] });
 assert.ok(dup.duplicate);
 assert.equal(o.list().length, 1);
 
@@ -58,8 +58,18 @@ assert.equal(o.setStatus(id, 'new').code, 409);
 assert.equal(o.setStatus(12345, 'ready').code, 404);
 assert.ok(o.setStatus(id, 'foo').error);
 
+
+// conditional VAT: coffee is 24% dine-in and 13% takeaway/delivery
+const dineCoffee = o.create({ table: '8', service_mode: 'dine_in', items: [{ id: 4, qty: 1 }] }).order;
+assert.equal(dineCoffee.items[0].vat_rate, 24);
+assert.equal(dineCoffee.service_mode, 'dine_in');
+const takeawayCoffee = o.create({ table: 'Takeaway 1', service_mode: 'takeaway_delivery', items: [{ id: 4, qty: 1 }] }).order;
+assert.equal(takeawayCoffee.items[0].vat_rate, 13);
+assert.equal(takeawayCoffee.service_mode, 'takeaway_delivery');
+assert.ok(o.create({ table: '9', items: [{ id: 1, qty: 1 }] }).error, 'service mode is required');
+
 // χειροκίνητη διαγραφή
-const d = o.create({ table: '3', items: [{ id: 2, qty: 1 }] }).order;
+const d = o.create({ table: '3', service_mode: 'dine_in', items: [{ id: 2, qty: 1 }] }).order;
 assert.equal(o.get(d.id).items.length, 1);
 assert.ok(o.remove(d.id).ok);
 assert.equal(o.get(d.id), null);

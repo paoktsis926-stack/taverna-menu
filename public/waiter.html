@@ -27,7 +27,7 @@ header h1 button{background:none;border:0;color:#cfe3e0;font-size:13px;padding:4
 .badge.ready{background:var(--ok)}
 main{padding:12px 14px}
 .row{display:flex;gap:8px;align-items:center}
-input,textarea{width:100%;font:16px system-ui;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+input,textarea,select{width:100%;font:16px system-ui;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
 input:focus,textarea:focus{outline:none;border-color:var(--sea2)}
 .table-in{font-weight:700;font-size:20px;text-align:center}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0;scrollbar-width:none}
@@ -84,7 +84,8 @@ input:focus,textarea:focus{outline:none;border-color:var(--sea2)}
 </header>
 <main>
   <section id="vNew">
-    <input id="table" class="table-in" placeholder="Τραπέζι (π.χ. 7)" maxlength="20" autocomplete="off">
+    <select id="service-mode" aria-label="Τρόπος εξυπηρέτησης" style="margin-bottom:8px;font-weight:600"><option value="dine_in">Σερβίρισμα στο τραπέζι</option><option value="takeaway_delivery">Take away / Delivery</option></select>
+    <input id="table" class="table-in" placeholder="Τραπέζι ή αναγνωριστικό παραλαβής" maxlength="40" autocomplete="off">
     <div class="row" style="margin-top:8px"><input id="q" type="search" placeholder="Αναζήτηση πιάτου…" autocomplete="off"></div>
     <div class="chips" id="chips"></div>
     <div id="menu"></div>
@@ -164,7 +165,7 @@ function drawMenu(){
     h+='<div class="cat-h">'+esc(c.name)+'</div>';
     its.forEach(function(i){
       var n=cart[i.id]?cart[i.id].qty:0,off=!i.available;
-      h+='<div class="it'+(off?' off':'')+'" data-id="'+i.id+'"><div class="nm">'+esc(i.name)+'</div><span class="price">'+Number(i.price||0).toFixed(2).replace('.',',')+' €</span><span class="vat-tag">'+(Number(i.vat_rate)===24?'24%':'13%')+'</span>'+
+      h+='<div class="it'+(off?' off':'')+'" data-id="'+i.id+'"><div class="nm">'+esc(i.name)+'</div><span class="price">'+Number(i.price||0).toFixed(2).replace('.',',')+' €</span><span class="vat-tag">'+(i.vat_mode==='service'?'13% / 24%':i.vat_mode==='fixed24'?'24%':'13%')+'</span>'+
         (off?'':'<div class="step">'+(n?'<button class="minus" data-a="-" type="button">−</button><b>'+n+'</b>':'')+'<button data-a="+" type="button">+</button></div>')+'</div>';
     });
   });
@@ -222,7 +223,7 @@ $('#send').addEventListener('click',function(){
   if(!items.length)return;
   clientId=clientId||uid(); // ίδιο id σε επαναλήψεις → δεν διπλογράφεται
   btn.disabled=true;btn.textContent='Αποστολή…';$('#serr').textContent='';
-  api('/api/staff/orders',{method:'POST',body:JSON.stringify({table:$('#table').value.trim(),items:items,note:$('#onote').value,waiter:waiter,clientId:clientId})})
+  api('/api/staff/orders',{method:'POST',body:JSON.stringify({table:$('#table').value.trim(),service_mode:$('#service-mode').value,items:items,note:$('#onote').value,waiter:waiter,clientId:clientId})})
   .then(function(){
     cart={};clientId=null;$('#table').value='';$('#onote').value='';$('#bg').classList.remove('on');
     toast('✓ Στάλθηκε στην κουζίνα','');setTab('act');drawMenu();poll();
@@ -239,7 +240,7 @@ function drawBills(){
   bills.forEach(function(b){
     h+='<div class="bill"><div class="hd"><h2>Τραπέζι '+esc(b.table_label)+'</h2><span class="st">'+b.orders.length+' παραγγελίες</span></div><div class="bill-lines">';
     b.orders.forEach(function(o){
-      h+='<div class="meta" style="margin-top:8px"><b>Παραγγελία #'+o.id+'</b> · '+new Date(o.created_at).toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'})+'</div>';
+      h+='<div class="meta" style="margin-top:8px"><b>Παραγγελία #'+o.id+'</b> · '+(o.service_mode==='takeaway_delivery'?'Take away / Delivery':'Τραπέζι')+' · '+new Date(o.created_at).toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'})+'</div>';
       o.items.forEach(function(l){h+='<div class="bill-line"><span>'+l.qty+'× '+esc(l.name)+' <small>('+l.vat_rate+'%)</small></span><b>'+money(Number(l.unit_price)*l.qty)+'</b></div>'});
     });
     h+='</div><div class="totals"><div><span>Καθαρή αξία</span><b>'+money(b.totals.net)+'</b></div><div><span>ΦΠΑ 13%</span><b>'+money(b.totals.vat13)+'</b></div><div><span>ΦΠΑ 24%</span><b>'+money(b.totals.vat24)+'</b></div><div><span>Σύνολο ΦΠΑ</span><b>'+money(b.totals.vat)+'</b></div><div class="grand"><span>Πληρωτέο σύνολο</span><b>'+money(b.totals.total)+'</b></div></div><button class="btn pri" data-bill="1" type="button" style="margin-top:10px">Προβολή / Εκτύπωση λογαριασμού</button></div>';
@@ -251,7 +252,7 @@ function drawOrders(){
   var h='';
   orders.slice().sort(function(a,b){return(a.status==='ready'?0:1)-(b.status==='ready'?0:1)||a.created_at-b.created_at}).forEach(function(o){
     h+='<div class="ord'+(o.status==='ready'?' ready':'')+'" data-id="'+o.id+'"><div class="hd"><span class="tb">Τραπέζι '+esc(o.table_label)+'</span><span class="st '+o.status+'">'+ST[o.status]+'</span></div>'+
-      '<div class="meta">πριν '+mins(o.created_at)+'′'+(o.waiter?' · '+esc(o.waiter):'')+'</div><ul>';
+      '<div class="meta">'+(o.service_mode==='takeaway_delivery'?'Take away / Delivery':'Σερβίρισμα στο τραπέζι')+' · πριν '+mins(o.created_at)+'′'+(o.waiter?' · '+esc(o.waiter):'')+'</div><ul>';
     o.items.forEach(function(l){h+='<li><b>'+l.qty+'×</b> '+esc(l.name)+(l.note?'<i>'+esc(l.note)+'</i>':'')+'</li>'});
     h+='</ul>'+(o.note?'<div class="meta"><b>Σχόλιο:</b> '+esc(o.note)+'</div>':'');
     if(o.status==='ready')h+='<button class="btn pri" data-s="served" type="button" style="margin-top:8px">Σερβιρίστηκε ✓</button>';

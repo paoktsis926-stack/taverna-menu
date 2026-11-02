@@ -22,6 +22,7 @@ try {
   assert.equal(db.prepare('SELECT allergen_codes FROM items WHERE id=?').get(itemId).allergen_codes, '[]', 'legacy dishes must default to no structured allergens');
   assert.equal(db.prepare('SELECT popular FROM items WHERE id=?').get(itemId).popular, 0, 'legacy dishes must not become popular automatically');
   assert.equal(db.prepare('SELECT vat_rate FROM items WHERE id=?').get(itemId).vat_rate, 13, 'legacy dishes receive the editable default VAT rate');
+  assert.equal(db.prepare('SELECT vat_mode FROM items WHERE id=?').get(itemId).vat_mode, 'fixed13', 'legacy dishes receive the fixed 13% VAT behavior by default');
   assert.equal(db.prepare('SELECT name FROM items WHERE id=?').get(itemId).name, 'Τζατζίκι', 'existing item must be preserved');
   db.prepare('UPDATE items SET image_url=? WHERE id=?').run('https://example.com/tzatziki.jpg', itemId);
   db.close();
