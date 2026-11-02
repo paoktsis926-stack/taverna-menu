@@ -39,5 +39,7 @@ addCol('items', 'allergens_tr', "TEXT DEFAULT ''");
 addCol('items', 'image_url', "TEXT DEFAULT ''");
 addCol('items', 'allergen_codes', "TEXT DEFAULT '[]'");
 addCol('items', 'popular', "INTEGER DEFAULT 0");
+// VAT rate per menu item; consumer prices remain VAT-inclusive.
+addCol('items', 'vat_rate', "INTEGER NOT NULL DEFAULT 13");
 
 module.exports = db;

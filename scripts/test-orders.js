@@ -8,9 +8,9 @@ if (Database) db = new Database(':memory:');
 else { const { DatabaseSync } = require('node:sqlite'); db = new DatabaseSync(':memory:'); }
 db.exec(`
 CREATE TABLE categories (id INTEGER PRIMARY KEY, name TEXT);
-CREATE TABLE items (id INTEGER PRIMARY KEY, category_id INTEGER, name TEXT, available INTEGER DEFAULT 1);
+CREATE TABLE items (id INTEGER PRIMARY KEY, category_id INTEGER, name TEXT, available INTEGER DEFAULT 1, price REAL DEFAULT 0, vat_rate INTEGER DEFAULT 13);
 INSERT INTO categories VALUES (1,'Ψάρια');
-INSERT INTO items VALUES (1,1,'Τσιπούρες',1),(2,1,'Γαύρος',1),(3,1,'Εξαντλημένο',0);`);
+INSERT INTO items VALUES (1,1,'Τσιπούρες',1,10,13),(2,1,'Γαύρος',1,5,24),(3,1,'Εξαντλημένο',0,4,13);`);
 const { createOrders } = require('../orders');
 const o = createOrders(db);
 
@@ -30,6 +30,14 @@ assert.equal(r.order.table_label, 'Βεράντα 2');
 assert.equal(r.order.items.length, 2);
 assert.equal(r.order.items[0].name, 'Τσιπούρες');
 assert.equal(r.order.items[0].note, 'χωρίς λεμόνι');
+assert.equal(r.order.items[0].unit_price, 10);
+assert.equal(r.order.items[0].vat_rate, 13);
+assert.equal(r.order.items[1].vat_rate, 24);
+assert.equal(r.order.totals.total, 25);
+assert.equal(r.order.totals.vat13, 2.3);
+assert.equal(r.order.totals.vat24, 0.97);
+assert.equal(r.order.totals.vat, 3.27);
+assert.equal(r.order.totals.net, 21.73);
 assert.equal(r.order.status, 'new');
 
 // διπλή αποστολή (ίδιο clientId) δεν δημιουργεί δεύτερη παραγγελία
@@ -44,6 +52,8 @@ assert.equal(o.setStatus(id, 'served').code, 409); // δεν γίνεται σε
 assert.equal(o.setStatus(id, 'ready').order.status, 'ready');
 assert.equal(o.setStatus(id, 'served').order.status, 'served');
 assert.equal(o.list().length, 0);
+assert.equal(o.bills().length, 1);
+assert.equal(o.bills()[0].totals.total, 25);
 assert.equal(o.setStatus(id, 'new').code, 409);
 assert.equal(o.setStatus(12345, 'ready').code, 404);
 assert.ok(o.setStatus(id, 'foo').error);
