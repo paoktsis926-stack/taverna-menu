@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Διαχείριση μενού</title>
+<script src="/design.js"></script>
 <style>
 :root{--sea:#103c46;--sea2:#1b5960;--gold:#d7ad63;--bg:#f4f3ed;--ink:#19353a;--mute:#697a79;--line:#e1e3db;--red:#a64232;--ok:#2f7d57}
 *{box-sizing:border-box}
@@ -62,6 +63,20 @@ dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::ba
  #nv{flex-direction:row;overflow-x:auto}#nv button{white-space:nowrap}.sf{flex-direction:row}
  main{padding:16px}.tools,.two{grid-template-columns:1fr}.trr{grid-template-columns:1fr}
 }
+
+#t-look h1{margin-bottom:2px}.dz-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 12px}.dz-bar .grow{flex:1}
+.seg{display:inline-flex;border:1px solid #d5ddd8;border-radius:12px;overflow:hidden;background:#fffefa}.seg button{border:0;border-radius:0;padding:9px 14px;background:transparent}.seg button.on{background:var(--sea);color:#fff}
+.dz-body{display:grid;grid-template-columns:350px 1fr;gap:16px;align-items:start}
+.dz-ctl{background:#fffefa;border:1px solid var(--line);border-radius:16px;padding:6px 14px 14px;max-height:calc(100vh - 230px);overflow:auto}
+.dz-ctl details{border-bottom:1px solid var(--line);padding:4px 0}.dz-ctl details:last-child{border:0}
+.dz-ctl summary{cursor:pointer;font-weight:700;color:var(--sea);padding:10px 0;font-size:15px}
+.dz-ctl label{margin:9px 0 3px;font-size:13px}.dz-ctl select{width:100%;padding:8px;border:1px solid #d5ddd8;border-radius:10px;background:#fffefa}
+.dz-bar select{width:auto;padding:9px 12px;border:1px solid #d5ddd8;border-radius:12px;background:#fffefa}.dz-ctl input[type=range]{width:100%;accent-color:var(--sea)}.clr{display:flex;align-items:center;gap:10px}.clr input{width:54px;height:34px;padding:0;border:1px solid #d5ddd8;border-radius:8px;background:none}.clr code{font-size:12px;color:var(--mute)}
+.sw{display:flex!important;align-items:center;gap:9px;font-weight:500!important}.sw input{width:18px;height:18px;accent-color:var(--sea)}
+.dz-pv{background:#dfe3e0;border:1px solid var(--line);border-radius:16px;padding:10px;height:calc(100vh - 230px);overflow:auto;display:flex;justify-content:center}
+#dz-wrap{background:#fff;box-shadow:0 8px 30px #0003;overflow:hidden;flex:none}#dz-frame{border:0;display:block;transform-origin:0 0;background:#fff}
+#dz-msg{margin:8px 2px;min-height:1.4em}.dz-note{color:var(--mute);font-size:13px;margin:4px 2px}
+@media(max-width:1000px){.dz-body{grid-template-columns:1fr}.dz-ctl{max-height:none}.dz-pv{height:70vh}}
 </style>
 </head>
 <body>
@@ -77,7 +92,7 @@ dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::ba
     <nav id="nv">
       <button data-t="dash" class="on">Dashboard</button><button data-t="prod">Προϊόντα</button>
       <button data-t="tr">Μεταφράσεις</button><button data-t="price">Τιμές</button>
-      <button data-t="print">PDF, QR, Table tents</button><button data-t="stats">Αναλυτικά</button><button data-t="designer">Σχεδιασμός</button><button data-t="set">Ρυθμίσεις</button>
+      <button data-t="print">PDF, QR, Table tents</button><button data-t="stats">Αναλυτικά</button><button data-t="look">Σχεδιασμός</button><button data-t="set">Ρυθμίσεις</button>
     </nav>
     <div class="sf"><a href="/" target="_blank">Δημόσιο μενού</a><button id="out">Έξοδος</button></div>
   </aside>
@@ -116,6 +131,10 @@ dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::ba
         <label>Στρογγυλοποίηση</label>
         <select id="pst"><option value="0.1">Στα 10 λεπτά</option><option value="0.5">Στα 50 λεπτά</option><option value="1">Στο ευρώ</option><option value="0.05">Στα 5 λεπτά</option><option value="0">Χωρίς</option></select>
         <p class="err" id="pe"></p><button class="pri" id="pgo">Εφαρμογή</button></div>
+    
+      <div class="card" style="max-width:480px;margin-top:16px"><h3 style="margin:0 0 4px">ΦΠΑ ανά κατηγορία</h3>
+        <p class="sub" style="margin:0 0 8px">Ο λογαριασμός του σερβιτόρου χωρίζει το ΦΠΑ 13% και 24% ανάλογα με το πιάτο. Η αλλαγή εφαρμόζεται σε όλα τα πιάτα της κατηγορίας (μεμονωμένα πιάτα αλλάζουν από την επεξεργασία τους). Επιβεβαίωσε τους συντελεστές με τον λογιστή σου.</p>
+        <div id="vatlist"></div><p id="vatmsg"></p></div>
     </section>
 
     <section id="t-print" hidden>
@@ -139,13 +158,20 @@ dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::ba
     </section>
 
     <section id="t-look" hidden>
-      <h1>Εμφάνιση μενού</h1><p class="sub">Διάλεξε πώς φαίνονται τα πιάτα. Πάτα «Προεπισκόπηση» για να το δεις πριν αποθηκεύσεις.</p>
-      <div class="card" style="max-width:560px"><div id="lk"></div><p class="err" id="lke"></p>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px"><button id="lkprev" type="button">Προεπισκόπηση</button><button class="pri" id="lksave" type="button">Αποθήκευση</button></div>
-        <p class="sub" style="margin-top:12px">Η αρίθμηση και τα ελληνικά + αγγλικά μαζί ισχύουν και στο PDF εκτύπωσης.</p></div>
+      <h1>Σχεδιασμός</h1><p class="sub">Άλλαξε πώς φαίνεται το ψηφιακό μενού και το PDF. Η προεπισκόπηση δεξιά αλλάζει αμέσως. Τίποτα δεν αλλάζει για τους πελάτες μέχρι να πατήσεις «Αποθήκευση».</p>
+      <div class="dz-bar">
+        <div class="seg" id="dz-kind"><button type="button" data-k="web" class="on">Ψηφιακό μενού</button><button type="button" data-k="pdf">PDF εκτύπωσης</button></div>
+        <select id="dz-lang" aria-label="Γλώσσα προεπισκόπησης"><option value="el">Προεπισκόπηση: Ελληνικά</option><option value="en">English</option><option value="bg">Български</option><option value="tr">Türkçe</option></select>
+        <div class="seg" id="dz-dev"><button type="button" data-w="390" class="on">Κινητό</button><button type="button" data-w="1100">Υπολογιστής</button></div>
+        <span class="grow"></span>
+        <button type="button" id="dz-reset">Επαναφορά προεπιλογών</button>
+        <button type="button" id="dz-open">Άνοιγμα για εκτύπωση</button>
+        <button type="button" class="pri" id="dz-save">Αποθήκευση</button>
+      </div>
+      <div class="dz-body"><div class="dz-ctl" id="dz-ctl"></div><div class="dz-pv" id="dz-pv"><div id="dz-wrap"><iframe id="dz-frame" title="Προεπισκόπηση"></iframe></div></div></div>
+      <p id="dz-msg"></p>
+      <p class="dz-note">Το PDF δείχνει τις σελίδες όπως θα τυπωθούν. Στο παράθυρο εκτύπωσης του Chrome ξετσέκαρε «Κεφαλίδες και υποσέλιδα» και τσέκαρε «Γραφικά παρασκηνίου».</p>
     </section>
-
-    <section id="t-designer" hidden><h1>Σχεδιασμός</h1><p class="sub">Ξεχωριστή διαχείριση σχεδίασης, προτύπων και προεπισκόπησης.</p><iframe title="Εργαλείο σχεδιασμού καταλόγου" src="/designer.html" style="display:block;width:100%;height:1150px;border:0;border-radius:14px;background:#f4f3ed"></iframe></section>
 
     <section id="t-set" hidden>
       <h1>Ρυθμίσεις</h1><p class="sub">Στοιχεία που εμφανίζονται στο μενού και στο PDF</p>
@@ -174,7 +200,7 @@ dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::ba
 <label class="popular-check"><input id="d-popular" type="checkbox"> Δημοφιλές πιάτο / Popular</label>
   <div class="two"><div><label>Τιμή</label><input id="d-price" inputmode="decimal" placeholder="0,00"></div>
   <div><label>Κατηγορία</label><select id="d-cat"></select></div></div>
-  <label>Κατηγορία ΦΠΑ προϊόντος</label><select id="d-vat-mode"><option value="fixed13">13% — σταθερός</option><option value="fixed24">24% — σταθερός</option><option value="service">24% στο τραπέζι / 13% take away ή delivery</option></select><small>Η τιμή καταλόγου είναι τελική και περιλαμβάνει τον ΦΠΑ. Επιλέξτε τον κανόνα που αντιστοιχεί στο προϊόν.</small>
+  <label>ΦΠΑ (για τον λογαριασμό)</label><select id="d-vat"><option value="13">13%</option><option value="24">24%</option></select>
   <label style="display:flex;gap:8px;align-items:center"><input id="d-av" type="checkbox" style="width:auto"> Διαθέσιμο</label>
   <p class="err" id="de"></p>
   <div class="btns"><button class="pri" value="ok">Αποθήκευση</button><button type="button" id="dc">Άκυρο</button></div>
@@ -197,7 +223,7 @@ const fail=e=>alert(e.message);
 const all=()=>D.categories.flatMap(c=>c.items);
 
 async function load(){D=await api('/admin/menu');ST=await api('/admin/stats');view(true);renderAll()}
-function renderAll(){head();dash();opts();prod();tr();settings();look();stats()}
+function renderAll(){head();dash();opts();prod();tr();settings();look();stats();vatList()}
 function head(){const n=D.settings.name;$('#bn').textContent=n;$('#logo').textContent=[...n][0]||'M';document.title='Διαχείριση – '+n}
 function views(days){const lim=new Date(Date.now()-(days-1)*864e5).toISOString().slice(0,10);return ST.rows.filter(r=>r.day>=lim).reduce((a,r)=>a+r.n,0)}
 function dash(){const it=all(),on=it.filter(i=>i.available).length,photos=it.filter(i=>i.image_url).length;
@@ -281,7 +307,7 @@ function openDlg(it,cid){
   editId=it?it.id:null;$('#dt').textContent=it?'Επεξεργασία πιάτου':'Νέο πιάτο';$('#de').textContent='';
   $('#d-cat').innerHTML=D.categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
   $('#d-name').value=it?it.name:'';$('#d-nameen').value=it?it.name_en:'';$('#d-desc').value=it?it.description:'';$('#d-descen').value=it?it.description_en:'';
-  $('#d-price').value=it?money(it.price):'';$('#d-cat').value=cid;$('#d-vat-mode').value=it?.vat_mode|| (it?.vat_rate===24?'fixed24':'fixed13');$('#d-av').checked=it?!!it.available:true;$('#d-image').value=it?it.image_url||'':'';$('#d-image-file').value='';previewImage();$('#d-allergens').value=it?it.allergens||'':'';$('#d-allergensen').value=it?it.allergens_en||'':'';$('#d-popular').checked=it?!!it.popular:false;let codes=[];try{codes=JSON.parse(it?.allergen_codes||'[]')}catch{};$$('#allergen-options input').forEach(x=>x.checked=codes.includes(x.value));
+  $('#d-price').value=it?money(it.price):'';$('#d-cat').value=cid;$('#d-av').checked=it?!!it.available:true;$('#d-image').value=it?it.image_url||'':'';$('#d-image-file').value='';previewImage();$('#d-allergens').value=it?it.allergens||'':'';$('#d-allergensen').value=it?it.allergens_en||'':'';$('#d-popular').checked=it?!!it.popular:false;$('#d-vat').value=String(it&&it.vat===24?24:13);let codes=[];try{codes=JSON.parse(it?.allergen_codes||'[]')}catch{};$$('#allergen-options input').forEach(x=>x.checked=codes.includes(x.value));
   $('#dlg').showModal();$('#d-name').focus()}
 function previewImage(){const src=$('#d-image').value.trim(),img=$('#d-image-preview');try{const u=new URL(src);if(!['http:','https:'].includes(u.protocol))throw Error();img.src=u.href;img.hidden=false}catch{img.removeAttribute('src');img.hidden=true}}
 $('#d-image').addEventListener('input',previewImage);
@@ -298,7 +324,7 @@ $('#dc').onclick=()=>$('#dlg').close();
 $('#df').addEventListener('submit',async e=>{
   e.preventDefault();
   try{
-    const body={name:$('#d-name').value,name_en:$('#d-nameen').value,description:$('#d-desc').value,description_en:$('#d-descen').value,image_url:$('#d-image').value.trim(),allergens:$('#d-allergens').value,allergens_en:$('#d-allergensen').value,allergen_codes:$$('#allergen-options input:checked').map(x=>x.value),popular:$('#d-popular').checked?1:0,price:$('#d-price').value,vat_mode:$('#d-vat-mode').value,category_id:+$('#d-cat').value,available:$('#d-av').checked?1:0};
+    const body={name:$('#d-name').value,name_en:$('#d-nameen').value,description:$('#d-desc').value,description_en:$('#d-descen').value,image_url:$('#d-image').value.trim(),allergens:$('#d-allergens').value,allergens_en:$('#d-allergensen').value,allergen_codes:$$('#allergen-options input:checked').map(x=>x.value),popular:$('#d-popular').checked?1:0,vat:+$('#d-vat').value,price:$('#d-price').value,category_id:+$('#d-cat').value,available:$('#d-av').checked?1:0};
     await api(editId?'/admin/items/'+editId:'/admin/items',editId?'PUT':'POST',body);
     $('#dlg').close();await load();
   }catch(x){$('#de').textContent=x.message}});
@@ -340,23 +366,71 @@ $('#table-qr-show').onclick=()=>{
  $('#table-qr-download').href='/qr.png?download=1&size=2000&table='+encodeURIComponent(table);
  $('#table-qr-download').hidden=false;
 };
-const LOOK=[
- ['layout_style','Στυλ πιάτου',[['side','Φωτογραφία δίπλα στο κείμενο'],['top','Μεγάλη φωτογραφία από πάνω'],['text','Μόνο κείμενο (χωρίς φωτογραφίες)']]],
- ['layout_photo','Μέγεθος φωτογραφίας',[['sm','Μικρή'],['md','Μεσαία'],['lg','Μεγάλη']]],
- ['layout_shape','Σχήμα φωτογραφίας',[['square','Τετράγωνο'],['wide','Οριζόντιο (4:3)'],['round','Στρογγυλό']]],
- ['layout_numbers','Αρίθμηση πιάτων (1, 2, 3…)',[['0','Όχι'],['1','Ναι']]],
- ['layout_bilingual','Ελληνικά και αγγλικά μαζί (όπως στα έντυπα μενού)',[['0','Όχι'],['1','Ναι']]],
- ['layout_columns','Στήλες στον υπολογιστή',[['2','2 στήλες'],['1','1 στήλη']]]];
+/* ---------- Σχεδιασμός: φόρμα + ζωντανή προεπισκόπηση ---------- */
+const DZ={kind:'web',state:{web:null,pdf:null},dirty:false,w:390};
 function look(){
-  $('#lk').innerHTML=LOOK.map(([k,l,o])=>`<label>${l}</label><select id="l-${k}">${o.map(([v,t])=>`<option value="${v}"${(D.settings[k]||o[0][0])===v?' selected':''}>${t}</option>`).join('')}</select>`).join('')}
-const lookVals=()=>Object.fromEntries(LOOK.map(([k])=>[k,$('#l-'+k).value]));
-$('#lkprev').onclick=()=>window.open('/?'+new URLSearchParams(lookVals()).toString(),'_blank');
-$('#lksave').onclick=async()=>{try{await api('/admin/settings','PUT',lookVals());$('#lke').className='ok';$('#lke').textContent='Αποθηκεύτηκε';await load()}catch(x){$('#lke').className='err';$('#lke').textContent=x.message}};
+  if(DZ.dirty)return; // μην χαθούν αλλαγές που δεν έχουν αποθηκευτεί
+  DZ.state.web=DESIGN.resolve('web',D.settings);DZ.state.pdf=DESIGN.resolve('pdf',D.settings);
+  dzBuild();dzLoad()}
+function dzCtl(f,v){
+  const l=esc(f.l);
+  if(f.t==='select')return `<label>${l}</label><select data-k="${f.k}">${f.o.map(([a,b])=>`<option value="${esc(a)}"${String(v)===a?' selected':''}>${esc(b)}</option>`).join('')}</select>`;
+  if(f.t==='color')return `<label>${l}</label><div class="clr"><input type="color" data-k="${f.k}" value="${v}"><code>${v}</code></div>`;
+  if(f.t==='range')return `<label>${l}: <b>${v}${f.u||''}</b></label><input type="range" data-k="${f.k}" min="${f.min}" max="${f.max}" step="${f.step}" value="${v}">`;
+  return `<label class="sw"><input type="checkbox" data-k="${f.k}"${v?' checked':''}> ${l}</label>`}
+function dzBuild(){
+  const st=DZ.state[DZ.kind];
+  $('#dz-ctl').innerHTML=DESIGN.SCHEMA[DZ.kind].map(([g,fs],i)=>`<details${i<2?' open':''}><summary>${esc(g)}</summary>${fs.map(f=>dzCtl(f,st[f.k])).join('')}</details>`).join('');
+  $('#dz-dev').hidden=DZ.kind!=='web';
+  $$('#dz-kind button').forEach(b=>b.classList.toggle('on',b.dataset.k===DZ.kind))}
+function dzWidth(){
+  if(DZ.kind==='web')return DZ.w;
+  const st=DZ.state.pdf;let [w]=DESIGN.PAPER[st.paper];if(st.orient==='landscape')w=DESIGN.PAPER[st.paper][1];
+  return Math.round(w*3.7795)}
+function dzFit(){
+  const pv=$('#dz-pv'),fr=$('#dz-frame'),wrap=$('#dz-wrap');if(!pv.clientWidth)return;
+  const W=dzWidth(),sc=Math.min(1,(pv.clientWidth-20)/W),H=Math.max(300,(pv.clientHeight-20)/sc);
+  fr.style.width=W+'px';fr.style.height=H+'px';fr.style.transform=`scale(${sc})`;
+  wrap.style.width=(W*sc)+'px';wrap.style.height=(H*sc)+'px'}
+function dzSend(){const fr=$('#dz-frame');if(fr.contentWindow)fr.contentWindow.postMessage({type:'design',design:DZ.state[DZ.kind]},location.origin)}
+function dzLoad(){
+  const fr=$('#dz-frame'),lg=$('#dz-lang').value;
+  fr.src=(DZ.kind==='web'?'/?preview=1&lang=':'/print?preview=1&lang=')+lg;dzFit()}
+$('#dz-frame').addEventListener('load',()=>{dzSend();dzFit()});
+window.addEventListener('resize',dzFit);
+function dzMsg(t,c){$('#dz-msg').className=c||'';$('#dz-msg').textContent=t}
+$('#dz-kind').onclick=e=>{const b=e.target.closest('button');if(!b)return;DZ.kind=b.dataset.k;dzBuild();dzLoad()};
+$('#dz-dev').onclick=e=>{const b=e.target.closest('button');if(!b)return;DZ.w=+b.dataset.w;$$('#dz-dev button').forEach(x=>x.classList.toggle('on',x===b));dzFit()};
+$('#dz-lang').onchange=dzLoad;
+function dzInput(e){
+  const el=e.target,k=el.dataset.k;if(!k)return;
+  const f=DESIGN.fields(DZ.kind).find(x=>x.k===k);if(!f)return;
+  let v=f.t==='bool'?el.checked:el.value;
+  v=DESIGN.normalize(DZ.kind,{...DZ.state[DZ.kind],[k]:v})[k];
+  DZ.state[DZ.kind][k]=v;
+  if(f.t==='range'){const b=el.previousElementSibling.querySelector('b');if(b)b.textContent=v+(f.u||'')}
+  if(f.t==='color'){const c=el.parentElement.querySelector('code');if(c)c.textContent=v}
+  DZ.dirty=true;dzMsg('Υπάρχουν αλλαγές που δεν έχουν αποθηκευτεί.','err');dzSend();
+  if(DZ.kind==='pdf'&&(k==='paper'||k==='orient'))dzFit()}
+$('#dz-ctl').addEventListener('input',dzInput);$('#dz-ctl').addEventListener('change',dzInput);
+$('#dz-reset').onclick=()=>{
+  if(!confirm('Να γίνει επαναφορά των προεπιλογών για '+(DZ.kind==='web'?'το ψηφιακό μενού':'το PDF')+'; (Δεν αποθηκεύεται μέχρι να πατήσεις Αποθήκευση.)'))return;
+  DZ.state[DZ.kind]=DESIGN.normalize(DZ.kind,{});DZ.dirty=true;dzBuild();dzSend();dzFit();dzMsg('Έγινε επαναφορά. Πάτα Αποθήκευση για να εφαρμοστεί.','err')};
+$('#dz-open').onclick=()=>{
+  if(DZ.dirty&&!confirm('Έχεις αλλαγές που δεν έχουν αποθηκευτεί. Θα ανοίξει η αποθηκευμένη έκδοση. Να συνεχίσω;'))return;
+  window.open(DZ.kind==='web'?'/':'/print?lang='+$('#dz-lang').value,'_blank')};
+$('#dz-save').onclick=async()=>{
+  try{await api('/admin/design','PUT',{web:DZ.state.web,pdf:DZ.state.pdf});DZ.dirty=false;await load();dzMsg('Αποθηκεύτηκε. Οι αλλαγές είναι πλέον ζωντανές.','ok')}catch(x){dzMsg(x.message,'err')}};
+function vatList(){
+  $('#vatlist').innerHTML=D.categories.map(c=>{const v=[...new Set(c.items.map(i=>i.vat===24?24:13))];const cur=v.length===1?String(v[0]):'';
+    return `<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;margin:6px 0"><span>${esc(c.name)} <small style="color:var(--mute)">(${c.items.length})</small></span><select data-vc="${c.id}">${cur?'':'<option value="" selected>Μικτό</option>'}<option value="13"${cur==='13'?' selected':''}>13%</option><option value="24"${cur==='24'?' selected':''}>24%</option></select></div>`}).join('')}
+$('#vatlist').onchange=async e=>{const el=e.target;if(!el.dataset.vc||!el.value)return;
+  try{await api('/admin/categories/'+el.dataset.vc+'/vat','PUT',{vat:+el.value});$('#vatmsg').className='ok';$('#vatmsg').textContent='Το ΦΠΑ αποθηκεύτηκε.';await load()}catch(x){$('#vatmsg').className='err';$('#vatmsg').textContent=x.message}};
 $('#ssave').onclick=async()=>{
   const b={};SF.forEach(([k])=>b[k]=$('#s-'+k).value);
   try{await api('/admin/settings','PUT',b);$('#se').className='ok';$('#se').textContent='Αποθηκεύτηκε';await load()}catch(x){$('#se').className='err';$('#se').textContent=x.message}};
 
-function go(t){$$('#nv [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));$$('main > section').forEach(s=>s.hidden=s.id!=='t-'+t)}
+function go(t){if(t==='look')setTimeout(dzFit,30);$$('#nv [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));$$('main > section').forEach(s=>s.hidden=s.id!=='t-'+t)}
 $$('#nv [data-t]').forEach(b=>b.onclick=()=>go(b.dataset.t));
 $$('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
 $('#out').onclick=async()=>{await api('/logout','POST');view(false)};

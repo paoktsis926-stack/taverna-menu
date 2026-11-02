@@ -30,6 +30,8 @@ function seed(db, force) {
       c.items.forEach((it, i) => ii.run(id, it.el, it.en, it.price, i + 1));
     });
     for (const k in settings) us.run(k, settings[k]);
+    // αλκοολούχα ποτά: ΦΠΑ 24% (τα υπόλοιπα 13%)
+    db.exec("UPDATE items SET vat = 24 WHERE category_id IN (SELECT id FROM categories WHERE name IN ('Μπύρες','Ούζα','Τσίπουρα','Ρετσίνες','Κρασιά'))");
   })();
   return true;
 }

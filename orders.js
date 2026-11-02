@@ -25,8 +25,7 @@ CREATE TABLE IF NOT EXISTS orders (
   note TEXT DEFAULT '',
   status TEXT NOT NULL DEFAULT 'new',
   created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL,
-  service_mode TEXT NOT NULL DEFAULT 'dine_in');
+  updated_at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS order_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
@@ -34,34 +33,25 @@ CREATE TABLE IF NOT EXISTS order_items (
   name TEXT NOT NULL,
   category TEXT DEFAULT '',
   qty INTEGER NOT NULL,
-  note TEXT DEFAULT '',
-  unit_price REAL NOT NULL DEFAULT 0,
-  vat_rate INTEGER NOT NULL DEFAULT 13);
+  note TEXT DEFAULT '');
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status, created_at);
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 `);
-
-  // Idempotent migration for existing waiter orders. Snapshot menu price and VAT once,
-  // so later product edits never rewrite an already placed order.
-  const orderColumns = new Set(db.prepare('PRAGMA table_info(orders)').all().map(x => x.name));
-  if (!orderColumns.has('service_mode')) db.exec("ALTER TABLE orders ADD COLUMN service_mode TEXT NOT NULL DEFAULT 'dine_in'");
-  const lineColumns = new Set(db.prepare('PRAGMA table_info(order_items)').all().map(x => x.name));
-  if (!lineColumns.has('unit_price')) {
-    db.exec('ALTER TABLE order_items ADD COLUMN unit_price REAL NOT NULL DEFAULT 0');
-    db.exec('UPDATE order_items SET unit_price=COALESCE((SELECT price FROM items WHERE items.id=order_items.item_id),0)');
+  // Λογαριασμός: τιμή και ΦΠΑ κάθε γραμμής αποθηκεύονται τη στιγμή της παραγγελίας· το τραπέζι κλείνει με closed_at
+  const colsOf = t => db.prepare(`PRAGMA table_info(${t})`).all().map(x => x.name);
+  if (!colsOf('order_items').includes('price')) {
+    db.exec('ALTER TABLE order_items ADD COLUMN price REAL NOT NULL DEFAULT 0');
+    db.exec('ALTER TABLE order_items ADD COLUMN vat INTEGER NOT NULL DEFAULT 13');
+    db.exec('UPDATE order_items SET price = COALESCE((SELECT price FROM items WHERE items.id = order_items.item_id), 0), vat = COALESCE((SELECT vat FROM items WHERE items.id = order_items.item_id), 13)');
   }
-  if (!lineColumns.has('vat_rate')) {
-    db.exec('ALTER TABLE order_items ADD COLUMN vat_rate INTEGER NOT NULL DEFAULT 13');
-    db.exec('UPDATE order_items SET vat_rate=COALESCE((SELECT vat_rate FROM items WHERE items.id=order_items.item_id),13)');
-  }
+  if (!colsOf('orders').includes('closed_at')) db.exec('ALTER TABLE orders ADD COLUMN closed_at INTEGER');
 
-  const getItem = db.prepare('SELECT i.id, i.name, i.available, i.price, i.vat_rate, i.vat_mode, c.name AS category FROM items i JOIN categories c ON c.id = i.category_id WHERE i.id = ?');
+  const getItem = db.prepare('SELECT i.id, i.name, i.available, i.price, i.vat, c.name AS category FROM items i JOIN categories c ON c.id = i.category_id WHERE i.id = ?');
   const byClient = db.prepare('SELECT id FROM orders WHERE client_id = ?');
-  const insOrder = db.prepare('INSERT INTO orders(client_id, table_label, waiter, note, status, created_at, updated_at, service_mode) VALUES(?,?,?,?,?,?,?,?)');
-  const insLine = db.prepare('INSERT INTO order_items(order_id, item_id, name, category, qty, note, unit_price, vat_rate) VALUES(?,?,?,?,?,?,?,?)');
+  const insOrder = db.prepare('INSERT INTO orders(client_id, table_label, waiter, note, status, created_at, updated_at) VALUES(?,?,?,?,?,?,?)');
+  const insLine = db.prepare('INSERT INTO order_items(order_id, item_id, name, category, qty, note, price, vat) VALUES(?,?,?,?,?,?,?,?)');
   const getOrder = db.prepare('SELECT * FROM orders WHERE id = ?');
-  const getLines = db.prepare('SELECT item_id, name, category, qty, note, unit_price, vat_rate FROM order_items WHERE order_id = ? ORDER BY id');
-  const listForBills = db.prepare("SELECT * FROM orders WHERE status <> 'cancelled' ORDER BY created_at, id");
+  const getLines = db.prepare('SELECT item_id, name, category, qty, note, price, vat FROM order_items WHERE order_id = ? ORDER BY id');
   const listActive = db.prepare(`SELECT * FROM orders WHERE status IN ('new','preparing','ready') ORDER BY created_at, id`);
   const setStatusStmt = db.prepare('UPDATE orders SET status = ?, updated_at = ? WHERE id = ?');
   const delOneLines = db.prepare('DELETE FROM order_items WHERE order_id = ?');
@@ -69,29 +59,12 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
   const delLines = db.prepare('DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE created_at < ?)');
   const delOrders = db.prepare('DELETE FROM orders WHERE created_at < ?');
 
-  function summarize(lines) {
-    const out = { net: 0, vat13: 0, vat24: 0, vat: 0, total: 0 };
-    let netCents = 0, vat13Cents = 0, vat24Cents = 0, totalCents = 0;
-    for (const line of lines) {
-      const gross = Math.round(Number(line.unit_price) * 100) * Number(line.qty);
-      const rate = Number(line.vat_rate);
-      const tax = Math.round(gross * rate / (100 + rate));
-      totalCents += gross;
-      if (rate === 13) vat13Cents += tax; else if (rate === 24) vat24Cents += tax;
-      netCents += gross - tax;
-    }
-    out.net = netCents / 100; out.vat13 = vat13Cents / 100; out.vat24 = vat24Cents / 100;
-    out.vat = (vat13Cents + vat24Cents) / 100; out.total = totalCents / 100;
-    return out;
-  }
-  const full = o => { if (!o) return null; const items = getLines.all(o.id); return { ...o, items, totals: summarize(items) }; };
+  const full = o => (o ? { ...o, items: getLines.all(o.id) } : null);
 
   function validate(body) {
     body = body || {};
-    const table = clean(body.table, 40);
-    if (!table || !/^[\p{L}\p{N} .\-\/]+$/u.test(table)) return { error: 'Γράψτε τραπέζι ή αναγνωριστικό παραλαβής.' };
-    const serviceMode = body.service_mode === 'takeaway_delivery' ? 'takeaway_delivery' : body.service_mode === 'dine_in' ? 'dine_in' : null;
-    if (!serviceMode) return { error: 'Επιλέξτε τρόπο εξυπηρέτησης.' };
+    const table = clean(body.table, 20);
+    if (!table || !/^[\p{L}\p{N} .\-\/]+$/u.test(table)) return { error: 'Γράψτε τραπέζι (π.χ. 7 ή Βεράντα 2).' };
     if (!Array.isArray(body.items) || !body.items.length) return { error: 'Η παραγγελία είναι κενή.' };
     if (body.items.length > 60) return { error: 'Πολλά πιάτα σε μία παραγγελία.' };
     const lines = [];
@@ -101,14 +74,11 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
       const it = getItem.get(id);
       if (!it) return { error: 'Ένα πιάτο δεν υπάρχει πια στον κατάλογο.' };
       if (!it.available) return { error: `Το «${it.name}» έχει εξαντληθεί.` };
-      const price = Number(it.price), mode = ['fixed13','fixed24','service'].includes(it.vat_mode) ? it.vat_mode : (Number(it.vat_rate) === 24 ? 'fixed24' : 'fixed13');
-      const vatRate = mode === 'fixed24' ? 24 : mode === 'service' ? (serviceMode === 'dine_in' ? 24 : 13) : 13;
-      if (!Number.isFinite(price) || price < 0) return { error: 'Το προϊόν έχει μη έγκυρη τιμή. Ελέγξτε το στο Admin.' };
-      lines.push({ id: it.id, name: it.name, category: it.category, qty, note: clean(raw.note, 120), unit_price: Math.round(price * 100) / 100, vat_rate: vatRate });
+      lines.push({ id: it.id, name: it.name, category: it.category, qty, note: clean(raw.note, 120), price: Number(it.price) || 0, vat: Number(it.vat) === 24 ? 24 : 13 });
     }
     const cid = clean(body.clientId, 64);
     return {
-      table, lines, service_mode: serviceMode,
+      table, lines,
       note: clean(body.note, 200),
       waiter: clean(body.waiter, 30),
       clientId: /^[A-Za-z0-9-]{8,64}$/.test(cid) ? cid : null,
@@ -125,9 +95,9 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
     const now = Date.now();
     db.exec('BEGIN IMMEDIATE');
     try {
-      const r = insOrder.run(v.clientId, v.table, v.waiter, v.note, 'new', now, now, v.service_mode);
+      const r = insOrder.run(v.clientId, v.table, v.waiter, v.note, 'new', now, now);
       const id = Number(r.lastInsertRowid);
-      for (const l of v.lines) insLine.run(id, l.id, l.name, l.category, l.qty, l.note, l.unit_price, l.vat_rate);
+      for (const l of v.lines) insLine.run(id, l.id, l.name, l.category, l.qty, l.note, l.price, l.vat);
       db.exec('COMMIT');
       return { order: full(getOrder.get(id)) };
     } catch (e) {
@@ -137,17 +107,6 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
   }
 
   const list = () => listActive.all().map(full);
-  function bills() {
-    const grouped = new Map();
-    for (const row of listForBills.all()) {
-      const order = full(row);
-      if (!grouped.has(order.table_label)) grouped.set(order.table_label, { table_label: order.table_label, orders: [], totals: { net: 0, vat13: 0, vat24: 0, vat: 0, total: 0 } });
-      const bill = grouped.get(order.table_label);
-      bill.orders.push(order);
-      for (const key of ['net','vat13','vat24','vat','total']) bill.totals[key] = Math.round((bill.totals[key] + order.totals[key]) * 100) / 100;
-    }
-    return Array.from(grouped.values()).sort((a,b) => a.table_label.localeCompare(b.table_label, 'el', { numeric: true }));
-  }
 
   function setStatus(id, status) {
     if (!STATUSES.includes(status)) return { error: 'Μη έγκυρη κατάσταση.' };
@@ -174,7 +133,54 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
     return { ok: true };
   }
 
-  return { validate, create, list, bills, get, setStatus, remove, cleanup };
+  // ---------- λογαριασμός ----------
+  const openOrders = db.prepare("SELECT * FROM orders WHERE table_label = ? AND closed_at IS NULL AND status != 'cancelled' ORDER BY created_at, id");
+  const openTablesQ = db.prepare("SELECT table_label, MIN(created_at) AS since FROM orders WHERE closed_at IS NULL AND status != 'cancelled' GROUP BY table_label ORDER BY since");
+  const closeQ = db.prepare("UPDATE orders SET closed_at = ?, updated_at = ?, status = CASE WHEN status IN ('new','preparing','ready') THEN 'served' ELSE status END WHERE table_label = ? AND closed_at IS NULL");
+  const cents = x => Math.round((Number(x) || 0) * 100);
+
+  function totals(lines) {
+    const by = {};
+    let gross = 0;
+    for (const l of lines) { gross += l.total; by[l.vat] = (by[l.vat] || 0) + l.total; }
+    const rates = Object.keys(by).map(Number).sort((a, b) => a - b).map(rate => {
+      const g = by[rate], net = Math.round(g / (1 + rate / 100));
+      return { rate, gross: g, net, vat: g - net };
+    });
+    return { gross, rates };
+  }
+
+  function bill(table) {
+    const orders = openOrders.all(table);
+    const merged = new Map();
+    for (const o of orders) for (const l of getLines.all(o.id)) {
+      const key = [l.item_id, l.name, l.price, l.vat].join('|');
+      const e = merged.get(key) || { name: l.name, price: l.price, vat: l.vat, qty: 0 };
+      e.qty += l.qty;
+      merged.set(key, e);
+    }
+    const lines = [...merged.values()].map(l => ({ ...l, total: cents(l.price) * l.qty }));
+    return {
+      table, orderIds: orders.map(o => o.id), since: orders.length ? orders[0].created_at : null,
+      pending: orders.filter(o => ['new', 'preparing', 'ready'].includes(o.status)).length,
+      lines, ...totals(lines),
+    };
+  }
+  const openTables = () => openTablesQ.all().map(t => {
+    const b = bill(t.table_label);
+    return { table: t.table_label, since: t.since, orders: b.orderIds.length, gross: b.gross, pending: b.pending };
+  });
+
+  function closeTable(table, force) {
+    const b = bill(table);
+    if (!b.orderIds.length) return { error: 'Το τραπέζι δεν έχει ανοιχτές παραγγελίες.', code: 404 };
+    if (b.pending && !force) return { error: 'Υπάρχουν παραγγελίες που δεν έχουν σερβιριστεί.', code: 409, pending: b.pending };
+    const now = Date.now();
+    closeQ.run(now, now, table);
+    return { ok: true, bill: b };
+  }
+
+  return { validate, create, list, get, setStatus, remove, cleanup, bill, openTables, closeTable };
 }
 
 // Σύνδεση με το express. ctx: { sign, getCookie, safeEq, attempts, adminAuthed, adminPassword, staffPassword, pub, path }
@@ -209,7 +215,6 @@ function mountOrders(app, db, ctx) {
   app.post('/api/staff/logout', (req, res) => { res.clearCookie('staff'); res.json({ ok: true }); });
   app.get('/api/staff/me', guard, (req, res) => res.json({ ok: true }));
   app.get('/api/staff/orders', guard, (req, res) => res.json({ now: Date.now(), orders: core.list() }));
-  app.get('/api/staff/bills', guard, (req, res) => res.json({ bills: core.bills() }));
   app.post('/api/staff/orders', guard, (req, res) => {
     const r = core.create(req.body);
     if (r.error) return res.status(400).json({ error: r.error });
@@ -230,6 +235,21 @@ function mountOrders(app, db, ctx) {
     if (r.error) return res.status(r.code || 400).json({ error: r.error });
     res.json(r.order);
   });
+  const tableParam = v => clean(v, 20);
+  app.get('/api/staff/tables', guard, (req, res) => res.json({ now: Date.now(), tables: core.openTables() }));
+  app.get('/api/staff/bill', guard, (req, res) => {
+    const t = tableParam(req.query.table);
+    if (!t) return res.status(400).json({ error: 'Λείπει το τραπέζι.' });
+    res.json(core.bill(t));
+  });
+  app.post('/api/staff/tables/close', guard, (req, res) => {
+    const t = tableParam(req.body && req.body.table);
+    if (!t) return res.status(400).json({ error: 'Λείπει το τραπέζι.' });
+    const r = core.closeTable(t, !!(req.body && req.body.force));
+    if (r.error) return res.status(r.code || 400).json({ error: r.error, pending: r.pending });
+    res.json({ ok: true });
+  });
+  app.get('/bill', (req, res) => res.sendFile(ctx.path.join(ctx.pub, 'bill.html')));
   app.get('/waiter', (req, res) => res.sendFile(ctx.path.join(ctx.pub, 'waiter.html')));
   app.get('/order', (req, res) => res.sendFile(ctx.path.join(ctx.pub, 'order.html')));
   app.get('/kitchen', (req, res) => res.sendFile(ctx.path.join(ctx.pub, 'kitchen.html')));

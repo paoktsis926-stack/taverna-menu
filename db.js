@@ -39,10 +39,10 @@ addCol('items', 'allergens_tr', "TEXT DEFAULT ''");
 addCol('items', 'image_url', "TEXT DEFAULT ''");
 addCol('items', 'allergen_codes', "TEXT DEFAULT '[]'");
 addCol('items', 'popular', "INTEGER DEFAULT 0");
-// VAT classification per menu item; consumer prices remain VAT-inclusive.
-addCol('items', 'vat_rate', "INTEGER NOT NULL DEFAULT 13");
-addCol('items', 'vat_mode', "TEXT NOT NULL DEFAULT 'fixed13'");
-// Preserve existing explicit 24% products when introducing VAT behavior modes.
-db.exec("UPDATE items SET vat_mode='fixed24' WHERE vat_rate=24 AND vat_mode='fixed13'");
+// ΦΠΑ ανά προϊόν (13% ή 24%). Την πρώτη φορά που προστίθεται η στήλη, τα αλκοολούχα ποτά μπαίνουν 24%, τα υπόλοιπα 13%.
+if (!db.prepare('PRAGMA table_info(items)').all().some(x => x.name === 'vat')) {
+  db.exec('ALTER TABLE items ADD COLUMN vat INTEGER NOT NULL DEFAULT 13');
+  db.exec("UPDATE items SET vat = 24 WHERE category_id IN (SELECT id FROM categories WHERE name IN ('Μπύρες','Ούζα','Τσίπουρα','Ρετσίνες','Κρασιά'))");
+}
 
 module.exports = db;

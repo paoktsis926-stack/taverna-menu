@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Λογαριασμός</title>
+<style>
+@page{size:A4 portrait;margin:14mm}
+*{box-sizing:border-box}
+html,body{margin:0;background:#e9ecec;color:#111;font:16px/1.4 "Helvetica Neue",Arial,"Segoe UI",system-ui,sans-serif}
+.bar{position:sticky;top:0;background:#103c46;color:#fff;padding:10px 16px;display:flex;gap:10px;align-items:center;font:600 14px system-ui}
+.bar span{flex:1}.bar button{border:0;border-radius:10px;padding:10px 16px;font:700 14px system-ui;background:#c8962d;color:#fff;cursor:pointer}.bar button.g{background:#fff;color:#103c46}
+.sheet{width:210mm;min-height:297mm;margin:14px auto;background:#fff;padding:14mm;box-shadow:0 4px 20px rgba(0,0,0,.15)}
+.top{text-align:center;border-bottom:2.5px solid #111;padding-bottom:6mm}
+.rest{font:700 20pt Georgia,"Times New Roman",serif}.addr{font-size:10.5pt;color:#444;margin-top:1mm}
+.title{font:800 13pt Arial,sans-serif;letter-spacing:.14em;margin-top:4mm}
+.meta{display:flex;justify-content:space-between;margin:6mm 0 4mm;font-size:12pt}
+.meta b{font-size:20pt}
+table{width:100%;border-collapse:collapse}
+th{font:700 9.5pt Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#444;text-align:right;border-bottom:1.5px solid #111;padding:2mm 1mm}
+th.l,td.l{text-align:left}
+td{padding:2.4mm 1mm;border-bottom:1px dashed #bbb;text-align:right;font-size:12pt;vertical-align:top}
+td.q{width:14mm;font-weight:700;text-align:left}td.v{width:16mm;color:#555;font-size:10pt}
+tr{break-inside:avoid}
+.total{margin-top:6mm;display:flex;justify-content:space-between;align-items:baseline;border-top:2.5px solid #111;border-bottom:2.5px solid #111;padding:4mm 1mm;font:800 18pt Arial,sans-serif}
+.vat{margin-top:7mm;width:100%;max-width:120mm;margin-left:auto}.vat caption{text-align:right;font:700 9.5pt Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#444;padding-bottom:1.5mm}
+.vat td,.vat th{font-size:10.5pt;padding:1.6mm 1mm}
+.note{margin-top:12mm;padding:3mm 4mm;border:1.5px solid #111;border-radius:2mm;font:700 10pt Arial,sans-serif;text-align:center;break-inside:avoid}
+.foot{margin-top:6mm;text-align:center;color:#555;font-size:10pt}
+.msg{text-align:center;padding:60px 20px;font:600 18px system-ui}
+@media print{html,body{background:#fff}.bar{display:none}.sheet{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="bar"><span>Λογαριασμός τραπεζιού (A4 κάθετο)</span><button class="g" onclick="history.length>1&&window.close()">Κλείσιμο</button><button onclick="window.print()">Εκτύπωση / Αποθήκευση PDF</button></div>
+<div id="root"><div class="msg">Φόρτωση…</div></div>
+<script>
+(function(){
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var q=new URLSearchParams(location.search),table=(q.get('table')||'').trim();
+var root=document.getElementById('root');
+function msg(t){root.innerHTML='<div class="msg">'+esc(t)+'</div>'}
+var cur='€';
+function eur(c){return (c/100).toFixed(2).replace('.',',')+'\u00a0'+cur}
+if(!table){msg('Λείπει το τραπέζι.')}
+else Promise.all([
+  fetch('/api/staff/bill?table='+encodeURIComponent(table),{credentials:'same-origin',cache:'no-store'}),
+  fetch('/api/menu',{cache:'no-store'}).then(function(r){return r.json()}).catch(function(){return{settings:{}}})
+]).then(function(a){
+  var r=a[0],s=a[1].settings||{};
+  if(r.status===401){msg('Απαιτείται σύνδεση. Ανοίξτε πρώτα τη σελίδα /waiter και συνδεθείτε.');return}
+  if(!r.ok){msg('Σφάλμα φόρτωσης.');return}
+  return r.json().then(function(b){draw(b,s)});
+}).catch(function(){msg('Δεν υπάρχει σύνδεση με τον διακομιστή.')});
+
+function draw(b,s){
+  cur=s.currency||'€';
+  if(!b.lines.length){msg('Το τραπέζι '+table+' δεν έχει ανοιχτές παραγγελίες.');return}
+  var d=new Date(),when=d.toLocaleDateString('el-GR')+' '+d.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'});
+  var rows=b.lines.map(function(l){return '<tr><td class="q">'+l.qty+'×</td><td class="l">'+esc(l.name)+'</td><td>'+eur(Math.round(l.price*100))+'</td><td class="v">'+l.vat+'%</td><td><b>'+eur(l.total)+'</b></td></tr>'}).join('');
+  var vat=b.rates.map(function(r){return '<tr><td class="l">'+r.rate+'%</td><td>'+eur(r.net)+'</td><td>'+eur(r.vat)+'</td><td>'+eur(r.gross)+'</td></tr>'}).join('');
+  var h='<div class="sheet"><div class="top"><div class="rest">'+esc(s.name||'')+'</div><div class="addr">'+esc(s.address||'')+'</div><div class="title">ΕΝΗΜΕΡΩΤΙΚΟΣ ΛΟΓΑΡΙΑΣΜΟΣ</div></div>'+
+   '<div class="meta"><span>Τραπέζι <b>'+esc(b.table)+'</b></span><span>'+esc(when)+'</span></div>'+
+   '<table><thead><tr><th class="l">Ποσ.</th><th class="l">Περιγραφή</th><th>Τιμή</th><th>ΦΠΑ</th><th>Σύνολο</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+   '<div class="total"><span>ΣΥΝΟΛΟ</span><span>'+eur(b.gross)+'</span></div>'+
+   '<table class="vat"><caption>Ανάλυση ΦΠΑ (οι τιμές περιλαμβάνουν ΦΠΑ)</caption><thead><tr><th class="l">Συντ.</th><th>Καθαρή αξία</th><th>ΦΠΑ</th><th>Σύνολο</th></tr></thead><tbody>'+vat+'</tbody></table>'+
+   '<div class="note">Το παρόν δεν αποτελεί φορολογικό παραστατικό (απόδειξη ή τιμολόγιο).</div>'+
+   '<div class="foot">Σας ευχαριστούμε για την επίσκεψή σας</div></div>';
+  root.innerHTML=h;document.title='Λογαριασμός — Τραπέζι '+b.table;
+  if(q.get('print')==='1')setTimeout(function(){window.print()},400);
+}
+})();
+</script>
+</body>
+</html>

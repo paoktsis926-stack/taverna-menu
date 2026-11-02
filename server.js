@@ -7,7 +7,6 @@ const zlib = require('zlib');
 const db = require('./db');
 const { seed } = require('./seed');
 const localized = require('./translations-bg-tr');
-const { DIGITAL_DEFAULT, PDF_DEFAULT, normalizeDesign } = require('./design');
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.dirname(process.env.DB_PATH || path.join(__dirname, 'data', 'menu.db'));
@@ -61,9 +60,6 @@ const DEF = { ...LAYOUT_DEF, name: 'Ψαροταβέρνα «Τα Μπαρμπο
 const getSettings = () => {
   const s = { ...DEF };
   db.prepare('SELECT * FROM settings').all().forEach(r => (s[r.key] = r.value));
-  s.digital_design ||= JSON.stringify(DIGITAL_DEFAULT);
-  s.pdf_design ||= JSON.stringify(PDF_DEFAULT);
-  s.design_templates ||= '[]';
   return s;
 };
 const str = (v, max) => String(v ?? '').trim().slice(0, max);
@@ -124,7 +120,7 @@ app.use('/api/menu', (req, res, next) => {
 });
 
 app.get('/health', (req, res) => res.json({ ok: true }));
-app.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /waiter\nDisallow: /kitchen\nDisallow: /order\nDisallow: /api/\nSitemap: ' + baseUrl(req) + '/sitemap.xml\n'));
+app.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /waiter\nDisallow: /kitchen\nDisallow: /order\nDisallow: /bill\nDisallow: /api/\nSitemap: ' + baseUrl(req) + '/sitemap.xml\n'));
 app.get('/sitemap.xml', (req, res) => { const url = (baseUrl(req) + '/').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); res.type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>' + url + '</loc></url></urlset>'); });
 
 app.post('/api/login', (req, res) => {
@@ -176,27 +172,6 @@ const A = express.Router();
 A.use((req, res, next) => (authed(req) ? next() : res.status(401).json({ error: 'Απαιτείται σύνδεση' })));
 
 A.get('/menu', (req, res) => res.json(getMenu(true)));
-
-A.put('/design/:type', (req, res) => {
-  const type = req.params.type;
-  if (!['digital','pdf'].includes(type)) return res.status(404).json({ error: 'Άγνωστος σχεδιασμός.' });
-  const design = normalizeDesign(type, req.body?.design);
-  const key = type === 'digital' ? 'digital_design' : 'pdf_design';
-  db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run(key, JSON.stringify(design));
-  res.json({ ok: true, design });
-});
-
-A.put('/design-templates', (req, res) => {
-  const list = Array.isArray(req.body?.templates) ? req.body.templates.slice(0, 30) : [];
-  const clean = list.map(t => {
-    const type = t?.type === 'pdf' ? 'pdf' : 'digital';
-    const name = str(t?.name, 50);
-    if (!name) return null;
-    return { id: str(t?.id, 60) || crypto.randomBytes(8).toString('hex'), name, type, design: normalizeDesign(type, t?.design) };
-  }).filter(Boolean);
-  db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('design_templates', JSON.stringify(clean));
-  res.json({ ok: true, templates: clean });
-});
 A.post('/upload-image', express.raw({ type: 'application/octet-stream', limit: '8mb' }), (req, res) => {
   const b = req.body;
   if (!Buffer.isBuffer(b) || !b.length) return res.status(400).json({ error: 'Επιλέξτε φωτογραφία.' });
@@ -221,6 +196,18 @@ A.put('/settings', (req, res) => {
   res.json(getSettings());
 });
 
+// Σχεδιασμός ψηφιακού μενού και PDF (κοινό σχήμα με το public/design.js)
+const DESIGN = require('./public/design.js');
+A.put('/design', (req, res) => {
+  const body = req.body || {};
+  const up = db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value');
+  const kinds = ['web', 'pdf'].filter(k => k in body);
+  if (!kinds.length) return res.status(400).json({ error: 'Δεν στάλθηκε σχεδιασμός.' });
+  for (const k of kinds) if (!DESIGN.isValid(k, body[k])) return res.status(400).json({ error: 'Μη έγκυρη τιμή σχεδιασμού.' });
+  db.transaction(() => kinds.forEach(k => up.run('design_' + k, JSON.stringify(DESIGN.normalize(k, body[k])))))();
+  res.json(getSettings());
+});
+
 A.post('/categories', (req, res) => {
   const name = str(req.body.name, 100);
   if (!name) return res.status(400).json({ error: 'Δώστε όνομα κατηγορίας' });
@@ -237,18 +224,18 @@ A.put('/categories/:id', (req, res) => {
 });
 A.delete('/categories/:id', (req, res) => { db.prepare('DELETE FROM categories WHERE id=?').run(req.params.id); res.json({ ok: true }); });
 
+const vatVal = v => (Number(v) === 24 ? 24 : 13); // επιτρέπονται μόνο 13% και 24%
 A.post('/items', (req, res) => {
   const b = req.body, name = str(b.name, 150);
   if (!name) return res.status(400).json({ error: 'Δώστε όνομα πιάτου' });
   if (!db.prepare('SELECT 1 FROM categories WHERE id=?').get(b.category_id)) return res.status(400).json({ error: 'Άκυρη κατηγορία' });
   const image = imageUrl(b.image_url);
-  const vatMode = String(b.vat_mode || (Number(b.vat_rate) === 24 ? 'fixed24' : 'fixed13'));
-  if (!['fixed13','fixed24','service'].includes(vatMode)) return res.status(400).json({ error: 'Μη έγκυρος τρόπος ΦΠΑ.' });
-  const vatRate = vatMode === 'fixed24' ? 24 : 13;
   if (image === null) return res.status(400).json({ error: 'Η φωτογραφία πρέπει να έχει έγκυρο URL HTTPS.' });
   const sort = db.prepare('SELECT COALESCE(MAX(sort),0)+1 n FROM items WHERE category_id=?').get(b.category_id).n;
-  res.json({ id: db.prepare('INSERT INTO items(category_id,name,name_en,name_bg,name_tr,description,description_en,description_bg,description_tr,price,available,sort,allergens,allergens_en,allergens_bg,allergens_tr,image_url,allergen_codes,popular,vat_rate,vat_mode) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-    .run(b.category_id, name, str(b.name_en,150), str(b.name_bg,150), str(b.name_tr,150), str(b.description,400), str(b.description_en,400), str(b.description_bg,400), str(b.description_tr,400), num(b.price), bool(b.available ?? 1), sort, str(b.allergens,300), str(b.allergens_en,300), str(b.allergens_bg,300), str(b.allergens_tr,300), image, allergenCodes(b.allergen_codes), bool(b.popular ?? 0), vatRate, vatMode).lastInsertRowid });
+  const newId = db.prepare('INSERT INTO items(category_id,name,name_en,name_bg,name_tr,description,description_en,description_bg,description_tr,price,available,sort,allergens,allergens_en,allergens_bg,allergens_tr,image_url,allergen_codes,popular) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(b.category_id, name, str(b.name_en,150), str(b.name_bg,150), str(b.name_tr,150), str(b.description,400), str(b.description_en,400), str(b.description_bg,400), str(b.description_tr,400), num(b.price), bool(b.available ?? 1), sort, str(b.allergens,300), str(b.allergens_en,300), str(b.allergens_bg,300), str(b.allergens_tr,300), image, allergenCodes(b.allergen_codes), bool(b.popular ?? 0)).lastInsertRowid;
+  db.prepare('UPDATE items SET vat=? WHERE id=?').run(vatVal(b.vat), newId);
+  res.json({ id: newId });
 });
 A.put('/items/:id', (req, res) => {
   const it = db.prepare('SELECT * FROM items WHERE id=?').get(req.params.id);
@@ -256,13 +243,16 @@ A.put('/items/:id', (req, res) => {
   const b = { ...it, ...req.body }, name = str(b.name, 150);
   if (!name) return res.status(400).json({ error: 'Δώστε όνομα πιάτου' });
   const image = imageUrl(b.image_url, it.image_url || '');
-  const vatMode = String(b.vat_mode ?? it.vat_mode ?? (Number(b.vat_rate) === 24 ? 'fixed24' : 'fixed13'));
-  if (!['fixed13','fixed24','service'].includes(vatMode)) return res.status(400).json({ error: 'Μη έγκυρος τρόπος ΦΠΑ.' });
-  const vatRate = vatMode === 'fixed24' ? 24 : 13;
   if (image === null) return res.status(400).json({ error: 'Η φωτογραφία πρέπει να έχει έγκυρο URL HTTPS.' });
-  db.prepare('UPDATE items SET category_id=?,name=?,name_en=?,name_bg=?,name_tr=?,description=?,description_en=?,description_bg=?,description_tr=?,price=?,available=?,allergens=?,allergens_en=?,allergens_bg=?,allergens_tr=?,image_url=?,allergen_codes=?,popular=?,vat_rate=?,vat_mode=? WHERE id=?')
-    .run(b.category_id, name, str(b.name_en,150), str(b.name_bg,150), str(b.name_tr,150), str(b.description,400), str(b.description_en,400), str(b.description_bg,400), str(b.description_tr,400), num(b.price), bool(b.available), str(b.allergens,300), str(b.allergens_en,300), str(b.allergens_bg,300), str(b.allergens_tr,300), image, allergenCodes(b.allergen_codes ?? it.allergen_codes), bool(b.popular ?? it.popular), vatRate, vatMode, it.id);
+  db.prepare('UPDATE items SET category_id=?,name=?,name_en=?,name_bg=?,name_tr=?,description=?,description_en=?,description_bg=?,description_tr=?,price=?,available=?,allergens=?,allergens_en=?,allergens_bg=?,allergens_tr=?,image_url=?,allergen_codes=?,popular=? WHERE id=?')
+    .run(b.category_id, name, str(b.name_en,150), str(b.name_bg,150), str(b.name_tr,150), str(b.description,400), str(b.description_en,400), str(b.description_bg,400), str(b.description_tr,400), num(b.price), bool(b.available), str(b.allergens,300), str(b.allergens_en,300), str(b.allergens_bg,300), str(b.allergens_tr,300), image, allergenCodes(b.allergen_codes ?? it.allergen_codes), bool(b.popular ?? it.popular), it.id);
+  db.prepare('UPDATE items SET vat=? WHERE id=?').run(vatVal(b.vat ?? it.vat), it.id);
   res.json({ ok: true });
+});
+A.put('/categories/:id/vat', (req, res) => { // ΦΠΑ για όλα τα πιάτα μιας κατηγορίας
+  if (![13, 24].includes(Number(req.body.vat))) return res.status(400).json({ error: 'Το ΦΠΑ πρέπει να είναι 13% ή 24%.' });
+  const r = db.prepare('UPDATE items SET vat=? WHERE category_id=?').run(vatVal(req.body.vat), req.params.id);
+  res.json({ ok: true, changed: Number(r.changes) });
 });
 A.delete('/items/:id', (req, res) => { db.prepare('DELETE FROM items WHERE id=?').run(req.params.id); res.json({ ok: true }); });
 

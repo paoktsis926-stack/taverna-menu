@@ -1,47 +1,34 @@
 'use strict';
+// Έλεγχος του κοινού σχήματος σχεδιασμού (ψηφιακό μενού + PDF).
 const assert = require('node:assert/strict');
-const { DIGITAL_DEFAULT, PDF_DEFAULT, normalizeDesign } = require('../design');
-
-assert.deepEqual(normalizeDesign('digital', {}), DIGITAL_DEFAULT);
-assert.deepEqual(normalizeDesign('pdf', {}), PDF_DEFAULT);
-
-const digital = normalizeDesign('digital', {
-  colors: { primary: 'url(javascript:alert(1))', accent: '#ABCDEF' },
-  typography: { headingFont: 'Comic Sans', bodySize: 500 },
-  layout: { frameWidth: 9000, columns: 9, cardRadius: -2 },
-  photos: { fit: 'expression(alert(1))', width: 1 },
-  branding: { logoUrl: 'javascript:alert(1)', coverUrl: 'https://images.example.test/cover.jpg' },
-  devices: { mobile: { fontSize: 99, columns: 0 } }
-});
-assert.equal(digital.colors.primary, DIGITAL_DEFAULT.colors.primary);
-assert.equal(digital.colors.accent, '#ABCDEF');
-assert.equal(digital.typography.headingFont, 'Georgia');
-assert.equal(digital.typography.bodySize, 24);
-assert.equal(digital.layout.frameWidth, 1600);
-assert.equal(digital.layout.columns, 3);
-assert.equal(digital.layout.cardRadius, 0);
-assert.equal(digital.photos.fit, 'cover');
-assert.equal(digital.photos.width, 48);
-assert.equal(digital.branding.logoUrl, '');
-assert.equal(digital.branding.coverUrl, 'https://images.example.test/cover.jpg');
-assert.equal(digital.devices.mobile.fontSize, 24);
-assert.equal(digital.devices.mobile.columns, 1);
-
-const pdf = normalizeDesign('pdf', { layout: { marginTop: 100, columns: 0 }, typography: { bodySize: 1 } });
-assert.equal(pdf.layout.marginTop, 25);
-assert.equal(pdf.layout.columns, 1);
-assert.equal(pdf.typography.bodySize, 6);
-const extendedPdf = normalizeDesign('pdf', { layout: { pageSize: 'A5', orientation: 'landscape', showPhotos: true, showQr: false, newCategoryPage: true } });
-assert.equal(extendedPdf.layout.pageSize, 'A5');
-assert.equal(extendedPdf.layout.orientation, 'landscape');
-assert.equal(extendedPdf.layout.showPhotos, true);
-assert.equal(extendedPdf.layout.showQr, false);
-assert.equal(extendedPdf.layout.newCategoryPage, true);
-const extendedDigital = normalizeDesign('digital', { header: { height: 300, align: 'left' }, categories: { style: 'pill', showSearch: false }, dishes: { showPhotos: false, showAllergens: false } });
-assert.equal(extendedDigital.header.height, 300);
-assert.equal(extendedDigital.header.align, 'left');
-assert.equal(extendedDigital.categories.style, 'pill');
-assert.equal(extendedDigital.categories.showSearch, false);
-assert.equal(extendedDigital.dishes.showPhotos, false);
-assert.equal(extendedDigital.dishes.showAllergens, false);
-console.log('Design settings validation tests passed.');
+const D = require('../public/design.js');
+for (const kind of ['web', 'pdf']) {
+  const def = D.normalize(kind, {});
+  assert.ok(Object.keys(def).length > 25, kind + ': πολύ λίγες επιλογές');
+  assert.ok(D.isValid(kind, def), kind + ': οι προεπιλογές πρέπει να είναι έγκυρες');
+  assert.deepEqual(D.normalize(kind, def), def, kind + ': η κανονικοποίηση πρέπει να είναι σταθερή');
+  const css = kind === 'web' ? D.webCss(def) : D.pdfCss(def);
+  assert.ok(!/undefined|NaN|\[object/.test(css), kind + ': λάθος τιμή στο CSS');
+  // κάθε επιλογή select/range/color/bool: οι ακραίες τιμές δεν σπάνε το CSS
+  for (const f of D.fields(kind)) {
+    const tries = f.t === 'select' ? f.o.map(o => o[0]) : f.t === 'range' ? [f.min, f.max] : f.t === 'bool' ? [true, false] : ['#000000', '#ffffff'];
+    for (const v of tries) {
+      const n = D.normalize(kind, { [f.k]: v });
+      const out = kind === 'web' ? D.webCss(n) : D.pdfCss(n);
+      assert.ok(!/undefined|NaN|\[object/.test(out), `${kind}.${f.k}=${v}: λάθος CSS`);
+    }
+  }
+}
+// κακές τιμές απορρίπτονται
+assert.ok(!D.isValid('web', { c_header: 'red' }));
+assert.ok(!D.isValid('web', { fs: 9999 }));
+assert.ok(!D.isValid('web', { style: '<script>' }));
+assert.ok(!D.isValid('pdf', { paper: 'A3' }));
+assert.ok(!D.isValid('pdf', { evil: 1 }));
+assert.equal(D.normalize('web', { style: '<script>' }).style, 'side');
+// παλιές ρυθμίσεις μεταφέρονται
+assert.equal(D.resolve('web', { layout_style: 'top', layout_numbers: '1' }).style, 'top');
+assert.equal(D.resolve('web', { layout_style: 'top', layout_numbers: '1' }).numbers, true);
+assert.equal(D.resolve('web', { design_web: '{"style":"text"}' }).style, 'text');
+assert.equal(D.resolve('pdf', {}).p_photos, false);
+console.log('Έλεγχος σχεδιασμού επιτυχής.');
