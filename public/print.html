@@ -42,7 +42,7 @@ function applyPdfDesign(raw){
  ':root{--sea:'+color(c.primary,'#103c46')+';--gold:'+color(c.accent,'#d7ad63')+';--ink:'+color(c.text,'#19353a')+';--muted:'+color(c.muted,'#657371')+';--pdf-card:'+color(c.card,'#fffefa')+'}'+
  '@page{size:'+pageSize+' '+orientation+';margin:'+n(l.marginTop,4,25,12)+'mm '+n(l.marginSide,4,25,12)+'mm '+n(l.marginBottom,4,25,14)+'mm;'+(l.pageNumbers===false?'@bottom-center{content:none}':'@bottom-center{content:counter(page);font:8pt system-ui,sans-serif;color:#777}')+'}'+
  'body{background-color:'+color(c.background,'#fff')+';color:var(--ink);font-family:'+font(t.bodyFont)+';font-size:'+n(t.bodySize,6,24,10)+'pt}'+
- '.sheet{background-color:var(--pdf-card);border:'+n(l.borderWidth,0,4,0)+'pt solid '+color(c.border,'#dddddd')+';'+(background?'background-image:url("'+background+'");background-size:cover;background-position:center;':'')+'}'+
+ '.sheet{width:'+((pageSize==='A5'?148:pageSize==='Letter'?216:210)*(orientation==='landscape'?1.414:1))+'mm;max-width:100%;min-height:'+((pageSize==='A5'?210:pageSize==='Letter'?279:297)*(orientation==='landscape'?0.707:1))+'mm;background-color:var(--pdf-card);border:'+n(l.borderWidth,0,4,0)+'pt solid '+color(c.border,'#dddddd')+';'+(background?'background-image:url("'+background+'");background-size:cover;background-position:center;':'')+'}'+
  '.top{'+(cover?'background-image:linear-gradient(#ffffffd9,#ffffffd9),url("'+cover+'");background-size:cover;background-position:center;':'')+'}'+
  '.top h1{font-family:'+font(t.headingFont)+';font-size:'+n(t.headingSize,12,56,30)+'pt;font-weight:'+n(t.headingWeight,400,800,700)+';color:var(--sea)}'+
  '.cat h2{font-family:'+font(t.headingFont)+';font-size:'+n(t.categorySize,8,28,13)+'pt;font-weight:'+n(t.headingWeight,400,800,700)+';color:var(--sea)}'+
@@ -54,7 +54,7 @@ function applyPdfDesign(raw){
  '.foot{display:'+(l.showFooter===false?'none':'flex')+'}.foot img{display:'+(l.showQr===false?'none':'block')+'}.heritage-line{display:'+(l.showHeritage===false?'none':'block')+'}'+
  '.row,.ds,.en,.foot{font-family:'+font(t.bodyFont)+';font-weight:'+n(t.bodyWeight,400,800,400)+'}.ds,.en{text-align:'+(['left','center','right'].includes(t.textAlign)?t.textAlign:'left')+'}'+
  '.designer-pdf-logo{display:block;max-width:45mm;max-height:24mm;object-fit:contain;margin:0 auto 2mm}'+
- '@media print{body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.sheet{background-color:var(--pdf-card)}}';
+ '@media print{body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.sheet{width:auto;max-width:none;min-height:0;background-color:var(--pdf-card)}}';
  let style=document.getElementById('designer-pdf-style');if(!style){style=document.createElement('style');style.id='designer-pdf-style';document.head.appendChild(style)}style.textContent=css;
  const src=designUrl(b.logoUrl);document.querySelectorAll('.designer-pdf-logo').forEach(x=>x.remove());
  if(src)document.querySelectorAll('.top,.poster').forEach(top=>{const logo=document.createElement('img');logo.className='designer-pdf-logo';logo.alt='Λογότυπο';logo.src=src;top.prepend(logo)});
