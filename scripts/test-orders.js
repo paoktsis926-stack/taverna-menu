@@ -22,7 +22,7 @@ assert.ok(o.create({ table: '7', items: [] }).error);
 assert.ok(o.create({ table: '7', items: [{ id: 1, qty: 0 }] }).error);
 assert.ok(o.create({ table: '7', items: [{ id: 1, qty: 99 }] }).error);
 assert.ok(o.create({ table: '7', items: [{ id: 999, qty: 1 }] }).error);
-assert.match(o.create({ table: '7', items: [{ id: 3, qty: 1 }] }).error, /εξαντληθεί/);
+assert.match(o.create({ table: '7', service_mode: 'dine_in', items: [{ id: 3, qty: 1 }] }).error, /εξαντληθεί/);
 
 // σωστή παραγγελία, με όνομα από τον κατάλογο (όχι από τον client)
 const r = o.create({ table: ' Βεράντα 2 ', service_mode: 'dine_in', waiter: 'Μαρία', note: 'βιάζονται', clientId: 'abcd-1234-efgh', items: [{ id: 1, qty: 2, note: 'χωρίς λεμόνι', name: 'ΨΕΥΤΙΚΟ' }, { id: 2, qty: 1 }] });
