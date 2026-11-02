@@ -63,7 +63,8 @@ input:focus,textarea:focus{outline:none;border-color:var(--sea2)}
 .ord .tb{font:800 24px system-ui;color:var(--sea)}
 .st{font:700 12px system-ui;padding:4px 10px;border-radius:99px;background:#eee;white-space:nowrap}
 .st.new{background:#fde8c8;color:#7a4300}.st.preparing{background:#dbeafe;color:#1e40af}.st.ready{background:var(--ok);color:#fff}
-.ord ul{margin:8px 0;padding-left:0;list-style:none}.ord li{padding:3px 0;border-bottom:1px dashed var(--line)}
+.ord ul{margin:8px 0;padding-left:0;list-style:none}
+.bill{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}.bill h2{margin:0;color:var(--sea);font-size:22px}.bill .bill-lines{margin:10px 0}.bill .bill-line{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed var(--line)}.bill .totals{background:#f5f0e5;border-radius:12px;padding:10px;margin-top:10px}.bill .totals div{display:flex;justify-content:space-between;gap:8px;padding:3px 0}.bill .grand{font-weight:800;font-size:20px;color:var(--sea);border-top:1px solid var(--line);margin-top:5px;padding-top:8px!important}.price{font-size:13px;color:#68777a;white-space:nowrap}.vat-tag{font-size:11px;color:#8b6a25;white-space:nowrap}.ord li{padding:3px 0;border-bottom:1px dashed var(--line)}
 .ord li:last-child{border:0}.ord li i{display:block;color:var(--warn);font-size:14px}
 .meta{color:#6b7b80;font-size:13px}
 .empty{text-align:center;color:#6b7b80;padding:40px 10px}
@@ -79,7 +80,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--sea2)}
 <body>
 <header>
   <h1><span>Παραγγελίες · Σερβιτόρος</span><button id="out" type="button">Έξοδος</button></h1>
-  <div class="tabs"><button id="tNew" class="on" type="button">Νέα παραγγελία</button><button id="tAct" type="button">Ενεργές <span id="nAct" class="badge" hidden></span></button></div>
+  <div class="tabs"><button id="tNew" class="on" type="button">Νέα παραγγελία</button><button id="tAct" type="button">Ενεργές <span id="nAct" class="badge" hidden></span></button><button id="tBills" type="button">Λογαριασμοί <span id="nBills" class="badge" hidden></span></button></div>
 </header>
 <main>
   <section id="vNew">
@@ -88,7 +89,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--sea2)}
     <div class="chips" id="chips"></div>
     <div id="menu"></div>
   </section>
-  <section id="vAct" hidden><div id="orders"></div></section>
+  <section id="vAct" hidden><div id="orders"></div></section><section id="vBills" hidden><div id="bills"></div></section>
 </main>
 <div class="bar" id="bar"><button id="review" type="button" disabled>Προσθέστε πιάτα</button></div>
 
@@ -116,7 +117,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--sea2)}
 var $=function(s){return document.querySelector(s)};
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
 var ST={new:'Στάλθηκε',preparing:'Ετοιμάζεται',ready:'ΕΤΟΙΜΗ',served:'Σερβιρίστηκε',cancelled:'Ακυρώθηκε'};
-var mine={},prevOrders=null,cats=[],cart={},curCat='all',query='',tab='new',orders=[],seenReady=null,pollT=null,clientId=null;
+var mine={},prevOrders=null,cats=[],cart={},curCat='all',query='',tab='new',orders=[],bills=[],seenReady=null,pollT=null,clientId=null;
 var store={get:function(k){try{return localStorage.getItem(k)||''}catch(e){return ''}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 var waiter=store.get('waiterName');
 
@@ -163,7 +164,7 @@ function drawMenu(){
     h+='<div class="cat-h">'+esc(c.name)+'</div>';
     its.forEach(function(i){
       var n=cart[i.id]?cart[i.id].qty:0,off=!i.available;
-      h+='<div class="it'+(off?' off':'')+'" data-id="'+i.id+'"><div class="nm">'+esc(i.name)+'</div>'+
+      h+='<div class="it'+(off?' off':'')+'" data-id="'+i.id+'"><div class="nm">'+esc(i.name)+'</div><span class="price">'+Number(i.price||0).toFixed(2).replace('.',',')+' €</span><span class="vat-tag">'+(Number(i.vat_rate)===24?'24%':'13%')+'</span>'+
         (off?'':'<div class="step">'+(n?'<button class="minus" data-a="-" type="button">−</button><b>'+n+'</b>':'')+'<button data-a="+" type="button">+</button></div>')+'</div>';
     });
   });
@@ -232,6 +233,20 @@ $('#send').addEventListener('click',function(){
 
 /* ---------- ενεργές παραγγελίες ---------- */
 function mins(t){return Math.max(0,Math.round((Date.now()-t)/60000))}
+function money(v){return Number(v||0).toFixed(2).replace('.',',')+' €'}
+function drawBills(){
+  var h='';
+  bills.forEach(function(b){
+    h+='<div class="bill"><div class="hd"><h2>Τραπέζι '+esc(b.table_label)+'</h2><span class="st">'+b.orders.length+' παραγγελίες</span></div><div class="bill-lines">';
+    b.orders.forEach(function(o){
+      h+='<div class="meta" style="margin-top:8px"><b>Παραγγελία #'+o.id+'</b> · '+new Date(o.created_at).toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'})+'</div>';
+      o.items.forEach(function(l){h+='<div class="bill-line"><span>'+l.qty+'× '+esc(l.name)+' <small>('+l.vat_rate+'%)</small></span><b>'+money(Number(l.unit_price)*l.qty)+'</b></div>'});
+    });
+    h+='</div><div class="totals"><div><span>Καθαρή αξία</span><b>'+money(b.totals.net)+'</b></div><div><span>ΦΠΑ 13%</span><b>'+money(b.totals.vat13)+'</b></div><div><span>ΦΠΑ 24%</span><b>'+money(b.totals.vat24)+'</b></div><div><span>Σύνολο ΦΠΑ</span><b>'+money(b.totals.vat)+'</b></div><div class="grand"><span>Πληρωτέο σύνολο</span><b>'+money(b.totals.total)+'</b></div></div><button class="btn pri" data-bill="1" type="button" style="margin-top:10px">Προβολή / Εκτύπωση λογαριασμού</button></div>';
+  });
+  $('#bills').innerHTML=h||'<div class="empty">Δεν υπάρχουν ανοιχτοί λογαριασμοί.</div>';
+  var n=$('#nBills');n.hidden=!bills.length;n.textContent=bills.length;
+}
 function drawOrders(){
   var h='';
   orders.slice().sort(function(a,b){return(a.status==='ready'?0:1)-(b.status==='ready'?0:1)||a.created_at-b.created_at}).forEach(function(o){
@@ -246,6 +261,7 @@ function drawOrders(){
   var nr=orders.filter(function(o){return o.status==='ready'}).length,n=$('#nAct');
   n.hidden=!orders.length;n.textContent=orders.length;n.className='badge'+(nr?' ready':'');
 }
+$('#bills').addEventListener('click',function(e){var b=e.target.closest('button[data-bill]');if(!b)return;var card=b.closest('.bill'),label=card.querySelector('h2').textContent.replace(/^Τραπέζι\\s*/,'');window.open('/order?bill=1&table='+encodeURIComponent(label)+'&print=1','_blank')});
 $('#orders').addEventListener('click',function(e){
   var b=e.target.closest('button');if(!b||!b.closest('.ord'))return;
   var id=b.closest('.ord').dataset.id;
@@ -267,14 +283,16 @@ function poll(){
     var ready={};orders.forEach(function(o){if(o.status==='ready')ready[o.id]=o});
     if(seenReady){Object.keys(ready).forEach(function(id){if(!seenReady[id]){beep();toast('Τραπέζι '+ready[id].table_label+' — ΕΤΟΙΜΗ!','ready')}})}
     seenReady=ready;drawOrders();
+    return api('/api/staff/bills').then(function(d){bills=d.bills||[];drawBills()});
   }).catch(function(){});
 }
 function setTab(t){
-  tab=t;$('#vNew').hidden=t!=='new';$('#vAct').hidden=t!=='act';
-  $('#tNew').classList.toggle('on',t==='new');$('#tAct').classList.toggle('on',t==='act');drawBar();
+  tab=t;$('#vNew').hidden=t!=='new';$('#vAct').hidden=t!=='act';$('#vBills').hidden=t!=='bills';
+  $('#tNew').classList.toggle('on',t==='new');$('#tAct').classList.toggle('on',t==='act');$('#tBills').classList.toggle('on',t==='bills');drawBar();
 }
 $('#tNew').addEventListener('click',function(){setTab('new')});
 $('#tAct').addEventListener('click',function(){setTab('act');poll()});
+$('#tBills').addEventListener('click',function(){setTab('bills');poll()});
 
 function start(){
   loadMenu().catch(function(){toast('Δεν φορτώθηκε ο κατάλογος','bad')});
