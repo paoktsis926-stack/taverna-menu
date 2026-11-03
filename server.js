@@ -120,7 +120,7 @@ app.use('/api/menu', (req, res, next) => {
 });
 
 app.get('/health', (req, res) => res.json({ ok: true }));
-app.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /waiter\nDisallow: /kitchen\nDisallow: /order\nDisallow: /bill\nDisallow: /api/\nSitemap: ' + baseUrl(req) + '/sitemap.xml\n'));
+app.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /waiter\nDisallow: /kitchen\nDisallow: /order\nDisallow: /bill\nDisallow: /app\nDisallow: /api/\nSitemap: ' + baseUrl(req) + '/sitemap.xml\n'));
 app.get('/sitemap.xml', (req, res) => { const url = (baseUrl(req) + '/').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); res.type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>' + url + '</loc></url></urlset>'); });
 
 app.post('/api/login', (req, res) => {
@@ -297,6 +297,25 @@ app.use('/api/admin', A);
 
 // ---------- Σελίδες ----------
 const pub = path.join(__dirname, 'public');
+// Αναγνωριστικό έκδοσης: αλλάζει μόνο όταν αλλάζει κώδικας ή αρχεία (νέο deploy => ενημέρωση εφαρμογής στις συσκευές)
+const PKG_VERSION = require('./package.json').version;
+const BUILD = (() => {
+  const h = crypto.createHash('sha1');
+  const walk = d => fs.readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name)).forEach(e => {
+    const f = path.join(d, e.name);
+    if (e.isDirectory()) walk(f); else if (e.name !== '.DS_Store') { h.update(path.relative(pub, f)); h.update(fs.readFileSync(f)); }
+  });
+  walk(pub);
+  for (const f of [__filename, path.join(__dirname, 'orders.js')]) h.update(fs.readFileSync(f));
+  h.update(PKG_VERSION);
+  return h.digest('hex').slice(0, 10);
+})();
+app.get('/sw.js', (req, res) => {
+  res.set({ 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Service-Worker-Allowed': '/' });
+  res.send(fs.readFileSync(path.join(pub, 'sw.js'), 'utf8').replace('__BUILD__', BUILD));
+});
+app.get('/api/version', (req, res) => res.json({ version: PKG_VERSION, build: BUILD }));
+app.get('/app', (req, res) => { res.set('Cache-Control', 'no-store'); res.sendFile(path.join(pub, 'app.html')); });
 // ---------- Παραγγελίες (σερβιτόροι → κουζίνα) ----------
 require('./orders').mountOrders(app, db, {
   sign, getCookie, safeEq, attempts, adminAuthed: authed, path, pub,

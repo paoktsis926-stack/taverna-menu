@@ -1,7 +1,8 @@
 {
+  "id": "/kitchen",
   "name": "Κουζίνα — Παραγγελίες",
   "short_name": "Κουζίνα",
-  "description": "Παραγγελίες σερβιτόρων προς την κουζίνα",
+  "description": "Σουίτα διαχείρισης ταβέρνας",
   "lang": "el",
   "start_url": "/kitchen",
   "scope": "/",

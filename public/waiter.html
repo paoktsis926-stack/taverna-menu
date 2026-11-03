@@ -116,6 +116,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--sea2)}
   <button class="btn pri" type="submit">Είσοδος</button>
 </form></div>
 
+<script src="/pwa.js" data-update="safe"></script>
 <script>
 (function(){
 var $=function(s){return document.querySelector(s)};
@@ -324,12 +325,14 @@ function closeTable(table,pending,force){
   .catch(function(er){if(er.message!=='auth')toast(er.message,'bad')});
 }
 
+// ενημέρωση εφαρμογής μόνο όταν δεν υπάρχει παραγγελία σε εξέλιξη ή ανοιχτό παράθυρο
+window.PWA_CAN_RELOAD=function(){return cartCount()===0&&!$('#bg').classList.contains('on')&&!$('#bbg').classList.contains('on')&&!$('#login').classList.contains('on')&&document.activeElement.tagName!=='INPUT'&&document.activeElement.tagName!=='TEXTAREA'};
 function start(){
   loadMenu().catch(function(){toast('Δεν φορτώθηκε ο κατάλογος','bad')});
   poll();pollTables();clearInterval(pollT);pollT=setInterval(function(){if(!document.hidden){poll();pollTables()}},5000);
 }
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&$('#login').className.indexOf('on')<0){poll();loadMenu().catch(function(){})}});
-api('/api/staff/me').then(start).catch(function(){});
+api('/api/staff/me').then(function(){start();if(location.hash==='#bill'){setTab('bill');pollTables()}}).catch(function(){});
 })();
 </script>
 </body>
