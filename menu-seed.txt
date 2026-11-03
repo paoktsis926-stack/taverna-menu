@@ -1,30 +1,40 @@
 // Μορφή: "# Κατηγορία / Category" και "Όνομα / Name | τιμή". Γραμμές με @ είναι ρυθμίσεις.
 @name=Ψαροταβέρνα «Τα Μπαρμπούνια»
+@name_en=Fish Tavern “Ta Barbounia”
+@name_bg=Рибна таверна „Та Барбуния“
+@name_tr=Balık Tavernası “Ta Barbounia”
 @tagline=40 χρόνια με εκλεκτές γεύσεις
 @tagline_en=40 years of fine flavours
+@tagline_bg=40 години с изискани вкусове
+@tagline_tr=40 yıldır seçkin lezzetler
 @address=Μάκρη Έβρου, Αλεξανδρούπολη
+@address_en=Makri, Evros, Alexandroupoli
+@address_bg=Макри, Еврос, Александруполис
+@address_tr=Makri, Evros, Dedeağaç
 @footer=Οι τιμές ενδέχεται να αλλάζουν ανάλογα με τη διάθεση της αγοράς.
 @footer_en=Prices may change depending on market availability.
+@footer_bg=Цените могат да се променят в зависимост от наличностите на пазара.
+@footer_tr=Fiyatlar piyasa koşullarına göre değişebilir.
 @currency=€
 
 # Τυριά / Cheeses
-Φέτα σαγανάκι / Saganaki Feta | 5.00
+Φέτα σαγανάκι / Feta Saganaki | 5.00
 Κεφαλοτύρι ψητό / Grilled Kefalotyri Cheese | 4.50
 Κεφαλοτύρι τηγανητό / Fried Kefalotyri Cheese | 4.50
 Φέτα / Feta Cheese | 4.00
 
 # Σαλάτες / Salads
-Η μελιτζάνα μας / Our Eggplant | 5.00
-Αγγουροντομάτα / Cucumber Tomato Salad | 4.00
+Η μελιτζάνα μας / Our House Eggplant Salad | 5.00
+Αγγουροντομάτα / Cucumber and Tomato Salad | 4.00
 Μαρουλάκι / Lettuce Salad | 4.00
 Ρόκα / Arugula Salad | 5.00
 Ουγγαρέζα / Hungarian Salad (Ougareza) | 4.00
 Πατζάρι / Beetroot Salad | 4.00
-Φλωρίνης / Florina Pepper Salad | 4.00
+Φλωρίνης / Roasted Florina Peppers | 4.00
 Χωριάτικη / Greek Salad (Horiatiki) | 8.00
 Σεφ / Chef's Salad | 8.00
 Τζατζίκι / Tzatziki | 4.00
-Χτυπητή / Spicy Cheese Dip (Ktipiti) | 4.00
+Χτυπητή / Spicy Feta Dip (Htipiti) | 4.00
 Πατατοσαλάτα / Potato Salad | 4.00
 Ταραμάς / Taramasalata (fish roe dip) | 4.00
 Καβουροσαλάτα / Crab Salad | 8.00
@@ -32,84 +42,84 @@
 
 # Ορεκτικά / Appetizers
 Φλωρίνης Γεμιστές / Stuffed Florina Peppers | 5.00
-Κολοκυθοκεφτέδες / Zucchini fritters | 6.00
-Μπουγιουρντί / Bouyiourdi | 5.00
-Πατάτες γεμιστές / Stuffed potatoes | 5.00
-Μανιτάρια γεμιστά / Stuffed mushrooms | 5.00
-Κασεροκροκέτα / Kasseri croquette | 5.00
-Μανιτάρι σαγανάκι / Saganaki Mushrooms | 5.00
-Πατάτες στα κάρβουνα / Charcoal-grilled potatoes | 4.50
+Κολοκυθοκεφτέδες / Zucchini Fritters | 6.00
+Μπουγιουρντί / Bouyiourdi (baked feta with tomato and peppers) | 5.00
+Πατάτες γεμιστές / Stuffed Potatoes | 5.00
+Μανιτάρια γεμιστά / Stuffed Mushrooms | 5.00
+Κασεροκροκέτα / Kasseri Croquette | 5.00
+Μανιτάρι σαγανάκι / Mushroom Saganaki | 5.00
+Πατάτες στα κάρβουνα / Charcoal-Grilled Potatoes | 4.50
 Ελιές / Olives | 4.00
-Αντζούγιες / Salted anchovies | 4.00
+Αντζούγιες / Cured Anchovies | 4.00
 Τσίρος / Tsiros (dried small fish) | 4.00
-Πατάτες τηγανητές / French fries | 3.50
+Πατάτες τηγανητές / French Fries | 3.50
 Ριγανάτο σκουμπρί / Oregano Mackerel | 6.00
-Γαρίδα – σουβλάκι / Shrimp skewer | 15.00
+Γαρίδα – σουβλάκι / Shrimp Skewer | 15.00
 Ψωμάκι / Bread | 1.00
 
 # Κρεατικά / Meat
-Σνίτσελ χοιρινό με κόκκινη/άσπρη σάλτσα / Pork schnitzel with red or white sauce | 9.00
-Σνίτσελ κοτόπουλο με κόκκινη/άσπρη σάλτσα / Chicken schnitzel with red/white sauce | 9.00
+Σνίτσελ χοιρινό με κόκκινη/άσπρη σάλτσα / Pork Schnitzel with Red or White Sauce | 9.00
+Σνίτσελ κοτόπουλο με κόκκινη/άσπρη σάλτσα / Chicken Schnitzel with Red or White Sauce | 9.00
 Μπιφτέκι γεμιστό / Stuffed Bifteki | 9.00
 Σουβλάκι κοτόπουλο / Chicken Souvlaki | 8.00
-Τηγανιά με μανιτάρι / Pan-fried pork with mushrooms | 8.00
+Τηγανιά με μανιτάρι / Pan-Fried Pork with Mushrooms | 8.00
 Ριγανάτο / Riganato (meat with oregano) | 8.00
-Σουβλάκι χοιρινό / Pork souvlaki | 8.00
-Μπιφτέκια / Beef patties | 8.00
-Σουτζουκάκια / Soutzoukakia | 8.00
-Μοσχαρίσια / Beef steak | 15.00
+Σουβλάκι χοιρινό / Pork Souvlaki | 8.00
+Μπιφτέκια / Bifteki Patties | 8.00
+Σουτζουκάκια / Soutzoukakia (spiced meatballs) | 8.00
+Μοσχαρίσια / Beef Steak | 15.00
 Σνίτσελ χοιρινό / Pork Schnitzel | 8.00
-Σνίτσελ Κοτόπουλο / Chicken | 8.00
-Παϊδάκια / Lamb chops | 15.00
+Σνίτσελ Κοτόπουλο / Chicken Schnitzel | 8.00
+Παϊδάκια / Lamb Chops | 15.00
 Χοιρινή Μπριζόλα / Pork Chop | 9.00
-Πανσέτα / Pork belly (Panseta) | 8.00
+Πανσέτα / Pork Belly (Panseta) | 8.00
 Λουκάνικο / Greek Sausage | 8.00
 Ψαρονέφρι / Pork Tenderloin | 10.00
-Κοτόπουλο φιλέτο / Chicken fillet | 8.00
+Κοτόπουλο φιλέτο / Chicken Fillet | 8.00
 
 # Ψάρια / Fish
-Μπαρμπούνια (κιλό) / Red mullet (per kilo) | 60.00
-Μπακαλιαράκια (κιλό) / Fried cod (per kilo) | 40.00
+Μπαρμπούνια (κιλό) / Red Mullet (per kilo) | 60.00
+Μπακαλιαράκια (κιλό) / Fried Cod (per kilo) | 40.00
 Γλώσσες (κιλό) / Sole (per kilo) | 50.00
-Φέτα μελοκόπι (κιλό) / Melokopi fish steak (per kilo) | 60.00
-Κουτσουμουράκι (κιλό) / Small red mullet (Koutsomoura, per kilo) | 40.00
+Φέτα μελοκόπι (κιλό) / Melokopi Fish Steak (per kilo) | 60.00
+Κουτσουμουράκι (κιλό) / Small Red Mullet (Koutsomoura, per kilo) | 40.00
 Γοφάρια (κιλό) / Bluefish (per kilo) | 60.00
-Μουρμούρια (κιλό) / Striped seabream (per kilo) | 40.00
-Σαργοί (κιλό) / White seabream (per kilo) | 60.00
-Τσιπούρες (κιλό) / Gilthead sea bream (per kilo) | 60.00
+Μουρμούρια (κιλό) / Striped Seabream (per kilo) | 40.00
+Σαργοί (κιλό) / White Seabream (per kilo) | 60.00
+Τσιπούρες (κιλό) / Gilthead Sea Bream (per kilo) | 60.00
 Φέτα Ξιφία (κιλό) / Swordfish Steak (per kilo) | 60.00
-Φέτα Μαγιάτικο (κιλό) / Greater Amberjack steak (per kilo) | 60.00
+Φέτα Μαγιάτικο (κιλό) / Greater Amberjack Steak (per kilo) | 60.00
 
 # Θαλασσινά / Seafood
-Μυδοπίλαφο / Mussel pilaf | 10.00
-Μαρίδα (μερίδα) / Fried picarel (Marida) | 8.00
-Αθερίνα (μερίδα) / Fried sand smelt | 8.00
+Μυδοπίλαφο / Mussel Pilaf | 10.00
+Μαρίδα (μερίδα) / Fried Picarel (portion) | 8.00
+Αθερίνα (μερίδα) / Fried Sand Smelt (portion) | 8.00
 Παέλια / Paella | 10.00
 Γαύρος φιλέτο / Anchovy Fillet | 9.00
 Γαύρος τηγανητός / Fried Anchovies | 8.00
 Γαμπάρι σαγανάκι / Shrimp Saganaki | 8.00
 Χταπόδι ψητό / Grilled Octopus | 12.00
-Χταπόδι λιαστό / Sun-dried Octopus | 14.00
+Χταπόδι λιαστό / Sun-Dried Octopus | 14.00
 Σουπιά τηγανητή / Fried Cuttlefish | 10.00
 Σουπιά ψητή / Grilled Cuttlefish | 10.00
-Καλαμαράκια νωπά (κιλό) / Fresh calamari (per kilo) | 40.00
-Βάτος (μερίδα) / Skate | 10.00
-Μακαρονάκι καραβίδα / Langoustine pasta | 10.00
-Γαρίδα (μερίδα) / Shrimp | 15.00
-Γαύρος γεμιστός (μερίδα) / Stuffed anchovies | 9.00
-Γαλέος (μερίδα) / Dogfish | 15.00
-Καλαμαράκι (μερίδα) / Calamari | 9.00
-Γούνες (κιλό) / Dried salted fish (Gounes, per kilo) | 30.00
-Μύδια σαλάτα / Mussel salad | 9.00
-Μύδια σαγανάκι / Mussels saganaki | 9.00
-Μύδια τηγανητά / Fried mussels | 9.00
+Καλαμαράκια νωπά (κιλό) / Fresh Calamari (per kilo) | 40.00
+Βάτος (μερίδα) / Skate (portion) | 10.00
+Μακαρονάκι καραβίδα / Pasta with Langoustine | 10.00
+Γαρίδα (μερίδα) / Shrimp (portion) | 15.00
+Γαύρος γεμιστός (μερίδα) / Stuffed Anchovies (portion) | 9.00
+Γαλέος (μερίδα) / Dogfish (portion) | 15.00
+Καλαμαράκι (μερίδα) / Calamari (portion) | 9.00
+Γούνες (κιλό) / Dried Salted Fish (Gounes, per kilo) | 30.00
+Μύδια σαλάτα / Mussel Salad | 9.00
+Μύδια σαγανάκι / Mussels Saganaki | 9.00
+Μύδια τηγανητά / Fried Mussels | 9.00
 
 # Μπύρες / Beers
-Amstel / Amstel beer | 3.50
-Heineken / Heineken beer | 3.50
-Μύθος / Mythos beer | 3.50
-Βεργίνα / Vergina beer | 3.00
-Kaiser / Kaiser beer | 4.00
+Amstel / Amstel | 3.50
+Heineken / Heineken | 3.50
+Μύθος / Mythos | 3.50
+Βεργίνα / Vergina | 3.00
+Kaiser / Kaiser | 4.00
 
 # Ούζα / Ouzo
 Πλωμαρίου / Plomari Ouzo | 8.00
@@ -129,24 +139,24 @@ Kaiser / Kaiser beer | 4.00
 Χατζόπουλος / Hatzopoulos | 9.00
 
 # Ρετσίνες / Retsina
-Ρακιτζή / Rakidzi | 4.50
+Ρακιτζή / Rakitzi | 4.50
 Κάβειρος / Kaveiros | 4.00
 Μαλαματίνα / Malamatina | 4.00
 Γεωργιάδη / Georgiadi | 4.00
 Εβρίτικα Κελλάρια / Evritika Kellaria | 4.00
 
 # Κρασιά / Wines
-Χύμα / House wine (from the barrel) | 9.00
+Χύμα / House Wine (from the barrel) | 9.00
 
-# Αναψυκτικά / Soft drinks
-Coca cola / Coca Cola | 2.00
+# Αναψυκτικά / Soft Drinks
+Coca cola / Coca-Cola | 2.00
 Πορτοκαλάδα / Orangeade | 2.00
 Sprite / Sprite | 2.00
 Λεμονάδα / Lemonade | 2.00
-Γκαζόζα / Gazoza (Soda) | 2.00
-Σουρωτή / Souroti (Sparkling Water) | 2.00
-Νερό μικρό / Small Water | 0.50
-Νερό μεγάλο / Large Water | 1.00
-Φραπέ / Frappe Coffee | 2.00
+Γκαζόζα / Gazoza (Lemon Soda) | 2.00
+Σουρωτή / Souroti Sparkling Water | 2.00
+Νερό μικρό / Water (small) | 0.50
+Νερό μεγάλο / Water (large) | 1.00
+Φραπέ / Frappé | 2.00
 Ελληνικός καφές / Greek Coffee | 2.00
 Χυμός / Juice | 2.00

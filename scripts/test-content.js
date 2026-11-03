@@ -15,11 +15,16 @@ for (const c of cats) {
     assert.ok(it.price > 0, 'Μη έγκυρη τιμή: ' + it.el);
   }
 }
-for (const [el, f] of Object.entries(t.fixes || {})) {
-  assert.ok(names.has(el), 'Η διόρθωση αναφέρεται σε άγνωστο πιάτο: ' + el);
-  const it = cats.flatMap(c => c.items).find(x => x.el === el);
-  if (f.en) assert.equal(it.en, f.en[1], 'Το seed δεν συμφωνεί με τη διόρθωση EN: ' + el);
-  if (f.bg) assert.equal(t.items[el][0], f.bg[1], 'BG: ' + el);
-  if (f.tr) assert.equal(t.items[el][1], f.tr[1], 'TR: ' + el);
+// Κάθε γλώσσα έχει πλήρη μετάφραση σε ρυθμίσεις (όνομα, διεύθυνση, υπότιτλος, υποσέλιδο)
+const { settings } = parse();
+for (const k of require('../translations').TARGET_KEYS) assert.ok(settings[k], 'Λείπει μετάφραση ρύθμισης στο seed: ' + k);
+// Έλεγχος ποιότητας: ούτε αγγλικές λέξεις μέσα σε βουλγαρικά/τουρκικά, ούτε κενές/διπλές τιμές
+const ENGLISH = /\b(per kilo|portion|with|fried|grilled|salad|cheese|and|beer|water)\b/i;
+for (const c of cats) for (const it of c.items) {
+  const [bg, tr] = t.items[it.el];
+  assert.ok(!ENGLISH.test(bg), 'Αγγλικές λέξεις στα βουλγαρικά: ' + it.el + ' → ' + bg);
+  assert.ok(!ENGLISH.test(tr), 'Αγγλικές λέξεις στα τουρκικά: ' + it.el + ' → ' + tr);
+  assert.ok(/[\u0400-\u04FF]/.test(bg) || /^[A-Za-z0-9 .\-]+$/.test(bg), 'Τα βουλγαρικά πρέπει να είναι σε κυριλλικό (ή όνομα μάρκας): ' + it.el);
+  assert.ok(!/\((Per|Portion|From)\b/.test(it.en), 'Λάθος κεφαλαία στα αγγλικά: ' + it.en);
 }
 console.log('Έλεγχος περιεχομένου επιτυχής:', names.size, 'πιάτα,', cats.length, 'κατηγορίες.');

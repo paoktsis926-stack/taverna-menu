@@ -31,10 +31,10 @@ body{margin:0;color:var(--ink);font:10pt/1.35 Georgia,"Times New Roman",serif;ba
 <div class="sheet" id="r"></div>
 <script>
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const HERITAGE={"el":"40 χρόνια με εκλεκτές γεύσεις στη Μάκρη Έβρου, δίπλα στο κύμα, τιμούμε την παράδοση και τη θάλασσα με αγάπη και μεράκι.","en":"For 40 years, with exceptional flavors in Makri, Evros, right by the sea, we have honored tradition and the sea with love and passion.","bg":"Вече 40 години предлагаме изискани вкусове в Макри, Еврос, край морския бряг, като с любов и старание почитаме традицията и морето.","tr":"40 yıldır Evros'un Makri kasabasında, denizin hemen kıyısında, seçkin lezzetlerimizle geleneğe ve denize sevgi ve özveriyle değer veriyoruz."};
+const HERITAGE={"el":"40 χρόνια με εκλεκτές γεύσεις στη Μάκρη Έβρου, δίπλα στο κύμα, τιμούμε την παράδοση και τη θάλασσα με αγάπη και μεράκι.","en":"For 40 years, beside the waves in Makri, Evros, we have served exceptional flavours and honoured tradition and the sea with love and dedication.","bg":"Вече 40 години, край вълните в Макри, Еврос, предлагаме изискани вкусове и почитаме традицията и морето с любов и всеотдайност.","tr":"Evros'un Makri beldesinde, dalgaların hemen kıyısında, 40 yıldır seçkin lezzetler sunuyor; geleneğe ve denize sevgi ve özveriyle sahip çıkıyoruz."};
 const ALLERGENS={gluten:['Δημητριακά με γλουτένη','Cereals containing gluten','Зърнени култури с глутен','Gluten içeren tahıllar'],crustaceans:['Καρκινοειδή','Crustaceans','Ракообразни','Kabuklular'],eggs:['Αυγά','Eggs','Яйца','Yumurta'],fish:['Ψάρια','Fish','Риба','Balık'],peanuts:['Αραχίδες','Peanuts','Фъстъци','Yer fıstığı'],soybeans:['Σόγια','Soybeans','Соя','Soya'],milk:['Γάλα','Milk','Мляко','Süt'],nuts:['Καρποί με κέλυφος','Tree nuts','Ядки','Sert kabuklu yemişler'],celery:['Σέλινο','Celery','Целина','Kereviz'],mustard:['Μουστάρδα','Mustard','Горчица','Hardal'],sesame:['Σησάμι','Sesame','Сусам','Susam'],sulphites:['Διοξείδιο θείου / θειώδη','Sulphites','Сулфити','Sülfitler'],lupin:['Λούπινο','Lupin','Лупина','Acı bakla'],molluscs:['Μαλάκια','Molluscs','Мекотели','Yumuşakçalar']};
 const safeUrl=s=>{if(!String(s||'').trim())return '';try{const u=new URL(String(s||''),location.origin);return ['http:','https:'].includes(u.protocol)?u.href:''}catch{return ''}};
-const LANGS={el:{scan:'Σκανάρετε για το μενού',menu:'Ψηφιακό μενού',allergens:'Αλλεργιογόνα',footerLabel:'Πληροφορίες'},en:{scan:'Scan for the menu',menu:'Digital menu',allergens:'Allergens',footerLabel:'Information'},bg:{scan:'Сканирайте за менюто',menu:'Дигитално меню',allergens:'Алергени',footerLabel:'Информация'},tr:{scan:'Menüyü görüntülemek için tarayın',menu:'Dijital menü',allergens:'Alerjenler',footerLabel:'Bilgi'}};
+const LANGS={el:{scan:'Σκανάρετε για το μενού',eyebrow:'Μενού',menu:'Ψηφιακό μενού',allergens:'Αλλεργιογόνα',footerLabel:'Πληροφορίες'},en:{scan:'Scan for the menu',eyebrow:'Menu',menu:'Digital menu',allergens:'Allergens',footerLabel:'Information'},bg:{scan:'Сканирайте за менюто',eyebrow:'Меню',menu:'Дигитално меню',allergens:'Алергени',footerLabel:'Информация'},tr:{scan:'Menüyü görüntülemek için tarayın',eyebrow:'Menü',menu:'Dijital menü',allergens:'Alerjenler',footerLabel:'Bilgi'}};
 const params=new URLSearchParams(location.search),mode=params.get('mode'),IS_PREVIEW=params.has('preview');
 let DATA=null,PREVIEW=null;
 if(IS_PREVIEW)document.body.classList.add('preview');
@@ -42,7 +42,9 @@ const requestedLang=params.get('lang')||'el';
 const validLang=['el','en','bg','tr','all'].includes(requestedLang)?requestedLang:'el';
 const languagePicker=document.querySelector('#print-language');
 if(languagePicker) languagePicker.value=validLang;
-const value=(obj,key,lang)=>lang==='el'?(obj[key]||''):(obj[key+'_'+lang]||obj[key+'_en']||obj[key]||'');
+// Κάθε γλώσσα δείχνει ΜΟΝΟ κείμενο της γλώσσας της. Όνομα πιάτου/κατηγορίας: αν λείπει, αγγλικά και μετά ελληνικά. Περιγραφές, υπότιτλος, υποσέλιδο: αν λείπουν, δεν εμφανίζονται (καλύτερα κενό παρά λάθος γλώσσα).
+const value=(obj,key,lang)=>lang==='el'?(obj[key]||''):(obj[key+'_'+lang]||(key==='name'?(obj.name_en||obj.name):'')||'');
+const brand=(s,key,lang)=>lang==='el'?(s[key]||''):(s[key+'_'+lang]||s[key]||'');
 function render(){
  const s=DATA.settings;let cs=DATA.categories;const DP=DESIGN.resolve('pdf',s,PREVIEW);
  document.title=s.name+' — Εκτύπωση PDF';
@@ -65,7 +67,7 @@ function render(){
  r.classList.add('menu-root');document.getElementById('design-css').textContent=DESIGN.pdfCss(DP);
  const langs=validLang==='all'?['el','en','bg','tr']:[validLang];
  {const names={en:'English',bg:'Български',tr:'Türkçe'},out=[];
-  langs.filter(l=>l!=='el').forEach(l=>{let n=0;cs.forEach(c=>{if(!c['name_'+l])n++;c.items.forEach(i=>{if(!i['name_'+l]||(i.description&&!i['description_'+l]))n++})});if(n)out.push(names[l]+': '+n)});
+  langs.filter(l=>l!=='el').forEach(l=>{let n=0;['name','address','tagline','footer'].forEach(k=>{if(s[k]&&!s[k+'_'+l])n++});cs.forEach(c=>{if(!c['name_'+l])n++;c.items.forEach(i=>{if(!i['name_'+l]||(i.description&&!i['description_'+l]))n++})});if(n)out.push(names[l]+': '+n)});
   const w=document.querySelector('#missing');if(w)w.hidden=!out.length;if(w&&out.length){w.textContent='Λείπουν μεταφράσεις — '+out.join(' · ')+' (συμπληρώστε τες στη Διαχείριση → Μεταφράσεις)'}}
  const price=p=>Number(p)>0?Number(p).toFixed(2).replace('.',',')+' '+esc(s.currency):'';
  const menuHtml=lang=>{
@@ -74,8 +76,8 @@ function render(){
      c.items.map(i=>{let codes=[];try{codes=JSON.parse(i.allergen_codes||'[]')}catch{};const labels=codes.map(code=>ALLERGENS[code]?.[['el','en','bg','tr'].indexOf(lang)]).filter(Boolean);const freeAllergens=value(i,'allergens',lang);return '<div class="it">'+(DP.p_photos&&safeUrl(i.image_url)?'<img class="foodphoto" src="'+esc(safeUrl(i.image_url))+'" alt="">':'')+'<div class="row"><b>'+(LN?numMap[i.id]+'. ':'')+esc(value(i,'name',lang))+(LB&&lang==='el'&&i.name_en?' <em class="en2">/ '+esc(i.name_en)+'</em>':'')+'</b><span class="dots"></span><span class="pr">'+price(i.price)+'</span></div>'+(value(i,'description',lang)?'<p class="ds">'+esc(value(i,'description',lang))+'</p>':'')+(LB&&lang==='el'&&i.description_en?'<p class="ds en2">'+esc(i.description_en)+'</p>':'')+((labels.length||freeAllergens)?'<div class="allergen">'+esc(L.allergens)+': '+labels.map(x=>'<span>'+esc(x)+'</span>').join(' ')+(freeAllergens?' '+esc(freeAllergens):'')+'</div>':'')+'</div>'}).join('')+'</div>';
    const content=DP.page_per_cat?cs.map(c=>'<div class="cols">'+catHtml(c)+'</div>').join(''):'<div class="cols">'+cs.map(catHtml).join('')+'</div>';
    const tagline=value(s,'tagline',lang),footer=value(s,'footer',lang);
-   const head=DP.p_head?'<div class="top">'+(DP.p_eyebrow?'<div class="eyebrow">'+esc(L.menu)+'</div>':'')+'<h1>'+esc(s.name)+'</h1>'+(DP.p_tagline&&tagline?'<p>'+esc(tagline)+'</p>':'')+(DP.p_address&&s.address?'<div class="ad">'+esc(s.address)+'</div>':'')+'</div>':'';
-   const foot=(DP.p_qr||DP.p_footer)?'<div class="foot">'+(DP.p_qr?'<img src="/qr.svg" alt="QR code">':'')+(DP.p_footer?'<div><b>'+esc(L.menu)+'</b><br>'+esc(footer)+'</div>':'')+'</div>':'';
+   const head=DP.p_head?'<div class="top">'+(DP.p_eyebrow?'<div class="eyebrow">'+esc(L.eyebrow)+'</div>':'')+'<h1>'+esc(brand(s,'name',lang))+'</h1>'+(DP.p_tagline&&tagline?'<p>'+esc(tagline)+'</p>':'')+(DP.p_address&&s.address?'<div class="ad">'+esc(brand(s,'address',lang))+'</div>':'')+'</div>':'';
+   const foot=(DP.p_qr||DP.p_footer)?'<div class="foot">'+(DP.p_qr?'<img src="/qr.svg" alt="QR code">':'')+(DP.p_footer?'<div><b>'+esc(L.scan)+'</b><br>'+esc(footer)+'</div>':'')+'</div>':'';
    const her=DP.p_heritage?'<p class="heritage-line">'+esc(HERITAGE[lang]||HERITAGE.el)+'</p>':'';
    const allergy=DP.p_allergy?'<div class="allergy-note">'+esc(DESIGN.ALLERGY[lang]||DESIGN.ALLERGY.el)+'</div>':'';
    return '<section class="sheet" data-language="'+lang+'">'+head+allergy+content+foot+her+'</section>';

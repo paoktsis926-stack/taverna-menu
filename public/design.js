@@ -66,7 +66,8 @@
       { k: 'shape', t: 'select', d: 'square', o: [['square', 'Τετράγωνο'], ['wide', 'Οριζόντιο (4:3)'], ['round', 'Στρογγυλό']], l: 'Σχήμα φωτογραφίας' },
       { k: 'columns', t: 'select', d: '2', o: [['2', '2 στήλες'], ['1', '1 στήλη']], l: 'Στήλες στον υπολογιστή' },
       { k: 'numbers', t: 'bool', d: false, l: 'Αρίθμηση πιάτων (1, 2, 3…)' },
-      { k: 'bilingual', t: 'bool', d: false, l: 'Ελληνικά και αγγλικά μαζί' },
+      { k: 'bilingual', t: 'bool', d: false, l: 'Ελληνικά και αγγλικά μαζί (στα ελληνικά)' },
+      { k: 'show_original', t: 'bool', d: false, l: 'Ελληνικό όνομα κάτω από τη μετάφραση (στις ξένες γλώσσες)' },
       { k: 'price_pos', t: 'select', d: 'right', o: [['right', 'Δεξιά από το όνομα'], ['below', 'Κάτω από το όνομα']], l: 'Θέση τιμής' },
       { k: 'show_desc', t: 'bool', d: true, l: 'Περιγραφές' },
       { k: 'show_allergens', t: 'bool', d: true, l: 'Αλλεργιογόνα' },
@@ -230,6 +231,7 @@
     if (!d.show_allergy_box) hide.push('.allergy-box');
     if (!d.show_avail) hide.push('.filter-row');
     if (!d.show_desc) hide.push('.desc', '.en-desc');
+    if (!d.show_original) hide.push('.orig');
     if (!d.show_allergens) hide.push('.allergens', '.allergen-list', '.allergen-chip');
     if (!d.show_heritage) hide.push('footer .heritage-line');
     const hideCss = hide.length ? hide.join(',') + '{display:none!important}' : '';

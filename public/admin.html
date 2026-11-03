@@ -127,6 +127,9 @@ dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::ba
 
     <section id="t-tr" hidden>
       <h1>Μεταφράσεις</h1><p class="sub" id="trs"></p>
+      <div class="card" style="max-width:760px;margin-bottom:14px"><h3 style="margin:0 0 6px">Κάλυψη μεταφράσεων</h3><div id="trcov"></div>
+        <p class="sub" style="margin:10px 0 8px">Για να μεταφραστεί όλος ο κατάλογος μαζικά (ονόματα, περιγραφές, αλλεργιογόνα, κατηγορίες, τίτλοι και υποσέλιδο): πάτα «Εξαγωγή», στείλε το αρχείο για μετάφραση και μετά «Εισαγωγή» του διορθωμένου αρχείου. Δεν αλλάζουν τιμές, φωτογραφίες, διαθεσιμότητα ή ΦΠΑ.</p>
+        <div class="bt" style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="trexp">Εξαγωγή μεταφράσεων (JSON)</button><button type="button" id="trimpb">Εισαγωγή μεταφράσεων (JSON)</button><button type="button" id="trbak">Λήψη παλιών μεταφράσεων</button><input type="file" id="trimp" accept=".json,application/json" hidden></div><p id="trmsg2"></p></div>
       <p class="sub">Συμπληρώστε τις αποδόσεις για κάθε γλώσσα. Οι τιμές, οι φωτογραφίες και η διαθεσιμότητα δεν αλλάζουν.</p>
       <div id="trb"></div>
       <div class="bt" style="margin-top:14px"><button class="pri" id="trsave">Αποθήκευση μεταφράσεων</button></div><p id="trm"></p>
@@ -220,7 +223,7 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeImageUrl=s=>{try{const u=new URL(String(s||''));return ['http:','https:'].includes(u.protocol)?u.href:''}catch{return ''}};
 const money=p=>Number(p).toFixed(2).replace('.',',');
-const SF=[['name','Όνομα επιχείρησης'],['tagline','Υπότιτλος (Ελληνικά)'],['tagline_en','Υπότιτλος (English)'],['tagline_bg','Подзаглавие (Български)'],['tagline_tr','Alt başlık (Türkçe)'],['address','Διεύθυνση / περιοχή'],['footer','Κείμενο στο κάτω μέρος (Ελληνικά)'],['footer_en','Κείμενο στο κάτω μέρος (English)'],['footer_bg','Текст в долната част (Български)'],['footer_tr','Alt bilgi metni (Türkçe)'],['currency','Νόμισμα']];
+const SF=[['name','Όνομα επιχείρησης'],['name_en','Όνομα επιχείρησης (English)'],['name_bg','Име на заведението (Български)'],['name_tr','İşletme adı (Türkçe)'],['tagline','Υπότιτλος (Ελληνικά)'],['tagline_en','Υπότιτλος (English)'],['tagline_bg','Подзаглавие (Български)'],['tagline_tr','Alt başlık (Türkçe)'],['address','Διεύθυνση / περιοχή'],['address_en','Διεύθυνση (English)'],['address_bg','Адрес (Български)'],['address_tr','Adres (Türkçe)'],['footer','Κείμενο στο κάτω μέρος (Ελληνικά)'],['footer_en','Κείμενο στο κάτω μέρος (English)'],['footer_bg','Текст в долната част (Български)'],['footer_tr','Alt bilgi metni (Türkçe)'],['currency','Νόμισμα']];
 let D=null,ST={rows:[],total:0},editId=null;
 
 async function api(p,m='GET',b){
@@ -342,9 +345,22 @@ $('#df').addEventListener('submit',async e=>{
 function tr(){
   const langs=['en','bg','tr'],missing=all().filter(i=>langs.some(l=>!i['name_'+l])).length;
   $('#trs').textContent=missing?missing+' πιάτα χρειάζονται συμπλήρωση σε μία ή περισσότερες γλώσσες.':'Οι μεταφράσεις ονομάτων πιάτων είναι συμπληρωμένες.';
+  const st=D.settings,name={en:'English',bg:'Български',tr:'Türkçe'};
+  $('#trcov').innerHTML=langs.map(l=>{
+    const m={'κατηγορίες':D.categories.filter(c=>!c['name_'+l]).length,'ονόματα πιάτων':all().filter(i=>!i['name_'+l]).length,'περιγραφές':all().filter(i=>i.description&&!i['description_'+l]).length,'κείμενα μαγαζιού':['name','address','tagline','footer'].filter(k=>st[k]&&!st[k+'_'+l]).length};
+    const tot=Object.values(m).reduce((a,b)=>a+b,0);
+    return '<div style="display:flex;gap:10px;align-items:baseline;margin:4px 0"><b style="min-width:92px">'+name[l]+'</b>'+(tot?'<span style="color:#b45309">λείπουν: '+Object.entries(m).filter(e=>e[1]).map(e=>e[1]+' '+e[0]).join(', ')+'</span>':'<span style="color:#1c7c4b;font-weight:700">✓ πλήρης</span>')+'</div>'}).join('');
   const cell=(lang,label,name,desc,allergen)=>'<div class="trcell"><b>'+label+'</b><input data-name="'+lang+'" value="'+esc(name||'')+'" placeholder="Όνομα πιάτου"><input data-desc="'+lang+'" value="'+esc(desc||'')+'" placeholder="Περιγραφή"><input data-allergen="'+lang+'" value="'+esc(allergen||'')+'" placeholder="Σημείωση αλλεργιογόνων"></div>';
   $('#trb').innerHTML=D.categories.map(c=>'<div class="trr cat" data-cat="'+c.id+'"><div class="trcell"><b>Ελληνικά · '+esc(c.name)+'</b></div>'+langs.map(l=>'<div class="trcell"><b>'+({en:'English',bg:'Български',tr:'Türkçe'}[l])+'</b><input data-catname="'+l+'" value="'+esc(c['name_'+l]||'')+'" placeholder="Μετάφραση κατηγορίας"></div>').join('')+'</div>'+
     c.items.map(i=>'<div class="trr" data-it="'+i.id+'"><div class="trcell"><b>Ελληνικά · '+esc(i.name)+'</b><small>'+esc(i.description||'')+'</small></div>'+cell('en','English',i.name_en,i.description_en,i.allergens_en)+cell('bg','Български',i.name_bg,i.description_bg,i.allergens_bg)+cell('tr','Türkçe',i.name_tr,i.description_tr,i.allergens_tr)+'</div>').join('')).join('')}
+const dl=(name,obj)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
+const trMsg=(t,ok)=>{$('#trmsg2').className=ok?'ok':'err';$('#trmsg2').textContent=t};
+$('#trexp').onclick=async()=>{try{dl('metafraseis.json',await api('/admin/translations/export'));trMsg('Το αρχείο κατέβηκε.',true)}catch(x){trMsg(x.message)}};
+$('#trbak').onclick=async()=>{try{dl('palies-metafraseis.json',await api('/admin/translations/backup'));trMsg('Το αρχείο κατέβηκε.',true)}catch(x){trMsg(x.message)}};
+$('#trimpb').onclick=()=>$('#trimp').click();
+$('#trimp').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const j=JSON.parse(await f.text());if(!confirm('Να εισαχθούν οι μεταφράσεις από το αρχείο «'+f.name+'»; Θα αντικαταστήσουν τις υπάρχουσες μεταφράσεις (όχι τιμές ή ελληνικά).'))return;
+    const r=await api('/admin/translations/import','POST',j);trMsg('Εισήχθησαν: '+r.categories+' κατηγορίες, '+r.items+' πιάτα, '+r.settings+' κείμενα.',true);await load()}catch(x){trMsg(x.message.includes('JSON')?'Το αρχείο δεν είναι έγκυρο JSON.':x.message)}};
 $('#trsave').onclick=async()=>{
   const categories=$('#trb [data-cat]').map(r=>({id:+r.dataset.cat,...Object.fromEntries(['en','bg','tr'].map(l=>['name_'+l,r.querySelector('[data-catname="'+l+'"]').value]))}));
   const items=$('#trb [data-it]').map(r=>{const o={id:+r.dataset.it};['en','bg','tr'].forEach(l=>{o['name_'+l]=r.querySelector('[data-name="'+l+'"]').value;o['description_'+l]=r.querySelector('[data-desc="'+l+'"]').value;o['allergens_'+l]=r.querySelector('[data-allergen="'+l+'"]').value});return o});

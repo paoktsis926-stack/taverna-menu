@@ -7,6 +7,7 @@ const zlib = require('zlib');
 const db = require('./db');
 const { seed } = require('./seed');
 const localized = require('./translations-bg-tr');
+const translations = require('./translations');
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.dirname(process.env.DB_PATH || path.join(__dirname, 'data', 'menu.db'));
@@ -37,26 +38,40 @@ const applyInitialTranslations = db.transaction(() => {
   }
 });
 applyInitialTranslations();
-// Διορθώσεις μεταφράσεων σε υπάρχουσες βάσεις: αλλάζει μόνο αν η τιμή είναι ακόμη η παλιά (δεν πατάει χειροκίνητες αλλαγές).
-db.transaction(() => {
-  const col = { en: 'name_en', bg: 'name_bg', tr: 'name_tr' };
-  for (const [el, f] of Object.entries(localized.fixes || {}))
-    for (const [lg, [oldV, newV]] of Object.entries(f))
-      db.prepare(`UPDATE items SET ${col[lg]}=? WHERE name=? AND ${col[lg]}=?`).run(newV, el, oldV);
-  db.prepare("UPDATE items SET name_tr='Bouyiourdi' WHERE name='Μπουγιουρντί' AND name_tr LIKE 'Buy%'").run();
-})();
-
-{
-  const fill = db.prepare("INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value WHERE settings.value=''");
-  const base = { tagline_bg: '40 години с изискани вкусове', tagline_tr: '40 yıldır seçkin lezzetler', footer_bg: 'Цените могат да се променят в зависимост от наличностите на пазара.', footer_tr: 'Fiyatlar piyasa koşullarına göre değişebilir.' };
-  db.transaction(() => { for (const k in base) fill.run(k, base[k]); })();
+// Επιμελημένες μεταφράσεις (μία φορά): κατηγορίες, πιάτα και κείμενα του μενού (όνομα, διεύθυνση, υπότιτλος, υποσέλιδο) σε 4 γλώσσες.
+// Οι παλιές τιμές αποθηκεύονται πρώτα σε αντίγραφο (app_meta → translations_backup_v1). Μετά από αυτό, ό,τι αλλάζεις στη Διαχείριση μένει.
+db.exec('CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT)');
+const { TEXT_KEYS, TARGET_KEYS } = translations;
+if (!db.prepare("SELECT 1 FROM app_meta WHERE key = 'translations_v2'").get()) {
+  const { settings: seedSettings, cats: seedCats } = require('./seed').parse();
+  db.transaction(() => {
+    const backup = {
+      at: new Date().toISOString(),
+      categories: db.prepare('SELECT id, name, name_en, name_bg, name_tr FROM categories').all(),
+      items: db.prepare('SELECT id, name, name_en, name_bg, name_tr FROM items').all(),
+      settings: db.prepare('SELECT key, value FROM settings').all().filter(r => TEXT_KEYS.includes(r.key)),
+    };
+    db.prepare("INSERT OR REPLACE INTO app_meta(key, value) VALUES('translations_backup_v1', ?)").run(JSON.stringify(backup));
+    const uc = db.prepare('UPDATE categories SET name_en = ?, name_bg = ?, name_tr = ? WHERE name = ?');
+    const ui = db.prepare('UPDATE items SET name_en = ?, name_bg = ?, name_tr = ? WHERE name = ?');
+    for (const c of seedCats) {
+      const t = localized.categories[c.el];
+      if (t) uc.run(c.en, t[0], t[1], c.el);
+      for (const i of c.items) { const x = localized.items[i.el]; if (x) ui.run(i.en, x[0], x[1], i.el); }
+    }
+    const us = db.prepare('INSERT INTO settings(key, value) VALUES(?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value');
+    for (const k of TARGET_KEYS) if (seedSettings[k]) us.run(k, seedSettings[k]);
+    db.prepare("INSERT INTO app_meta(key, value) VALUES('translations_v2', ?)").run(new Date().toISOString());
+  })();
+  console.log('Εφαρμόστηκαν οι επιμελημένες μεταφράσεις (αντίγραφο των παλιών στο app_meta).');
 }
+
 const LAYOUT = {
   layout_style: ['side', 'top', 'text'], layout_photo: ['sm', 'md', 'lg'], layout_shape: ['square', 'round', 'wide'],
   layout_numbers: ['0', '1'], layout_bilingual: ['0', '1'], layout_columns: ['1', '2'],
 };
 const LAYOUT_DEF = { layout_style: 'side', layout_photo: 'md', layout_shape: 'square', layout_numbers: '0', layout_bilingual: '0', layout_columns: '2' };
-const DEF = { ...LAYOUT_DEF, name: 'Ψαροταβέρνα «Τα Μπαρμπούνια»', tagline: '', tagline_en: '', tagline_bg: '', tagline_tr: '', address: '', footer: '', footer_en: '', footer_bg: '', footer_tr: '', currency: '€' };
+const DEF = { ...LAYOUT_DEF, name: 'Ψαροταβέρνα «Τα Μπαρμπούνια»', name_en: '', name_bg: '', name_tr: '', tagline: '', tagline_en: '', tagline_bg: '', tagline_tr: '', address: '', address_en: '', address_bg: '', address_tr: '', footer: '', footer_en: '', footer_bg: '', footer_tr: '', currency: '€' };
 const getSettings = () => {
   const s = { ...DEF };
   db.prepare('SELECT * FROM settings').all().forEach(r => (s[r.key] = r.value));
@@ -276,6 +291,23 @@ A.put('/translations', (req, res) => {
       ...langs.map(l=>str(i['allergens_'+l],300)), i.id));
   })();
   res.json({ ok: true });
+});
+
+// Μαζική μετάφραση: εξαγωγή όλων των κειμένων σε JSON και εισαγωγή διορθωμένων μεταφράσεων (δεν αλλάζουν τιμές, φωτογραφίες, διαθεσιμότητα)
+A.get('/translations/export', (req, res) => {
+  res.set('Content-Disposition', 'attachment; filename="metafraseis.json"');
+  res.json(translations.exportAll(db, getSettings()));
+});
+A.post('/translations/import', (req, res) => {
+  const r = translations.importAll(db, req.body);
+  if (r.error) return res.status(400).json({ error: r.error });
+  res.json(r);
+});
+A.get('/translations/backup', (req, res) => {
+  const r = db.prepare("SELECT value FROM app_meta WHERE key = 'translations_backup_v1'").get();
+  if (!r) return res.status(404).json({ error: 'Δεν υπάρχει αντίγραφο.' });
+  res.set('Content-Disposition', 'attachment; filename="palies-metafraseis.json"');
+  res.type('json').send(r.value);
 });
 
 A.post('/bulk-price', (req, res) => {
