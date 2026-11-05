@@ -128,7 +128,7 @@ dialog{border:0;border-radius:16px;padding:18px;width:min(480px,94vw)}dialog::ba
     <section id="t-tr" hidden>
       <h1>Μεταφράσεις</h1><p class="sub" id="trs"></p>
       <div class="card" style="max-width:760px;margin-bottom:14px"><h3 style="margin:0 0 6px">Κάλυψη μεταφράσεων</h3><div id="trcov"></div>
-        <p class="sub" style="margin:10px 0 8px">Για να μεταφραστεί όλος ο κατάλογος μαζικά (ονόματα, περιγραφές, αλλεργιογόνα, κατηγορίες, τίτλοι και υποσέλιδο): πάτα «Εξαγωγή», στείλε το αρχείο για μετάφραση και μετά «Εισαγωγή» του διορθωμένου αρχείου. Δεν αλλάζουν τιμές, φωτογραφίες, διαθεσιμότητα ή ΦΠΑ.</p>
+        <p class="sub" style="margin:10px 0 8px">Για να μεταφραστεί όλος ο κατάλογος μαζικά (ονόματα, περιγραφές, κατηγορίες, τίτλοι και υποσέλιδο) και να φορτωθούν τα αλλεργιογόνα ανά πιάτο: πάτα «Εξαγωγή», στείλε το αρχείο για μετάφραση και μετά «Εισαγωγή» του διορθωμένου αρχείου. Δεν αλλάζουν τιμές, φωτογραφίες, διαθεσιμότητα ή ΦΠΑ.</p>
         <div class="bt" style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="trexp">Εξαγωγή μεταφράσεων (JSON)</button><button type="button" id="trimpb">Εισαγωγή μεταφράσεων (JSON)</button><button type="button" id="trbak">Λήψη παλιών μεταφράσεων</button><input type="file" id="trimp" accept=".json,application/json" hidden></div><p id="trmsg2"></p></div>
       <p class="sub">Συμπληρώστε τις αποδόσεις για κάθε γλώσσα. Οι τιμές, οι φωτογραφίες και η διαθεσιμότητα δεν αλλάζουν.</p>
       <div id="trb"></div>
@@ -360,7 +360,7 @@ $('#trbak').onclick=async()=>{try{dl('palies-metafraseis.json',await api('/admin
 $('#trimpb').onclick=()=>$('#trimp').click();
 $('#trimp').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
   try{const j=JSON.parse(await f.text());if(!confirm('Να εισαχθούν οι μεταφράσεις από το αρχείο «'+f.name+'»; Θα αντικαταστήσουν τις υπάρχουσες μεταφράσεις (όχι τιμές ή ελληνικά).'))return;
-    const r=await api('/admin/translations/import','POST',j);trMsg('Εισήχθησαν: '+r.categories+' κατηγορίες, '+r.items+' πιάτα, '+r.settings+' κείμενα.',true);await load()}catch(x){trMsg(x.message.includes('JSON')?'Το αρχείο δεν είναι έγκυρο JSON.':x.message)}};
+    const r=await api('/admin/translations/import','POST',j);trMsg('Εισήχθησαν: '+r.categories+' κατηγορίες, '+r.items+' πιάτα, '+r.settings+' κείμενα'+(r.allergens?', αλλεργιογόνα σε '+r.allergens+' πιάτα':'')+'.',true);await load()}catch(x){trMsg(x.message.includes('JSON')?'Το αρχείο δεν είναι έγκυρο JSON.':x.message)}};
 $('#trsave').onclick=async()=>{
   const categories=$('#trb [data-cat]').map(r=>({id:+r.dataset.cat,...Object.fromEntries(['en','bg','tr'].map(l=>['name_'+l,r.querySelector('[data-catname="'+l+'"]').value]))}));
   const items=$('#trb [data-it]').map(r=>{const o={id:+r.dataset.it};['en','bg','tr'].forEach(l=>{o['name_'+l]=r.querySelector('[data-name="'+l+'"]').value;o['description_'+l]=r.querySelector('[data-desc="'+l+'"]').value;o['allergens_'+l]=r.querySelector('[data-allergen="'+l+'"]').value});return o});

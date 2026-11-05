@@ -8,7 +8,7 @@ CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE categories (id INTEGER PRIMARY KEY, name TEXT, name_en TEXT DEFAULT '', name_bg TEXT DEFAULT '', name_tr TEXT DEFAULT '', sort INTEGER DEFAULT 0);
 CREATE TABLE items (id INTEGER PRIMARY KEY, category_id INTEGER, name TEXT, description TEXT DEFAULT '', allergens TEXT DEFAULT '',
   name_en TEXT DEFAULT '', name_bg TEXT DEFAULT '', name_tr TEXT DEFAULT '', description_en TEXT DEFAULT '', description_bg TEXT DEFAULT '', description_tr TEXT DEFAULT '',
-  allergens_en TEXT DEFAULT '', allergens_bg TEXT DEFAULT '', allergens_tr TEXT DEFAULT '', price REAL DEFAULT 5, available INTEGER DEFAULT 1, vat INTEGER DEFAULT 13, sort INTEGER DEFAULT 0);
+  allergens_en TEXT DEFAULT '', allergens_bg TEXT DEFAULT '', allergens_tr TEXT DEFAULT '', allergen_codes TEXT DEFAULT '[]', price REAL DEFAULT 5, available INTEGER DEFAULT 1, vat INTEGER DEFAULT 13, sort INTEGER DEFAULT 0);
 INSERT INTO categories(id,name) VALUES (1,'Τυριά');
 INSERT INTO items(id,category_id,name,description) VALUES (1,1,'Φέτα','Αυθεντική ελληνική φέτα'),(2,1,'Κεφαλοτύρι','');
 INSERT INTO settings VALUES ('tagline','40 χρόνια'),('footer','Οι τιμές αλλάζουν');`);
@@ -35,6 +35,22 @@ assert.equal(db.prepare("SELECT value FROM settings WHERE key = 'tagline_bg'").g
 assert.equal(db.prepare("SELECT value FROM settings WHERE key = 'tagline'").get().value, '40 χρόνια'); // το ελληνικό δεν αλλάζει
 cov = T.coverage(T.exportAll(db, { tagline: '40 χρόνια', footer: 'Οι τιμές αλλάζουν', tagline_bg: '40 години' }));
 assert.equal(cov.bg.names, 1); assert.equal(cov.bg.descriptions, 0); assert.equal(cov.bg.settings, 1);
+// αλλεργιογόνα: μόνο έγκυροι κωδικοί, και δεν αλλάζουν αν το πεδίο λείπει
+const al = T.exportAll(db, {});
+assert.deepEqual(al.items[0].allergen_codes, []);
+al.items[0].allergen_codes = ['milk', 'gluten', 'milk', 'ΛΑΘΟΣ', '<script>'];
+const ra = T.importAll(db, al);
+assert.equal(ra.allergens, 2);
+assert.deepEqual(JSON.parse(db.prepare('SELECT allergen_codes FROM items WHERE id = 1').get().allergen_codes), ['milk', 'gluten']);
+delete al.items[0].allergen_codes; delete al.items[1].allergen_codes;
+T.importAll(db, al);
+assert.deepEqual(JSON.parse(db.prepare('SELECT allergen_codes FROM items WHERE id = 1').get().allergen_codes), ['milk', 'gluten']); // αμετάβλητα
+// αρχείο μόνο με αλλεργιογόνα: οι μεταφράσεις ΔΕΝ σβήνονται
+const before = db.prepare('SELECT name_bg, description_tr FROM items WHERE id = 1').get();
+const r3 = T.importAll(db, { format: 'taverna-translations/1', items: [{ id: 1, allergen_codes: ['fish'] }] });
+assert.equal(r3.allergens, 1); assert.equal(r3.items, 0);
+assert.deepEqual(db.prepare('SELECT name_bg, description_tr FROM items WHERE id = 1').get(), before);
+assert.deepEqual(JSON.parse(db.prepare('SELECT allergen_codes FROM items WHERE id = 1').get().allergen_codes), ['fish']);
 // μη έγκυρο αρχείο και κακά δεδομένα
 assert.ok(T.importAll(db, { format: 'x' }).error);
 assert.ok(T.importAll(db, null).error);
